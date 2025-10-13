@@ -3,8 +3,10 @@
     <h1>Relief</h1>
     <Upload />
     <Controls />
-    <Viewer />
-    <Preview />
+    <div class="viewer-container">
+      <Preview />
+      <Viewer />
+    </div>
   </div>
 </template>
 
@@ -25,5 +27,32 @@ h1 {
   font-size: 3rem;
   color: #2c3e50;
   margin-bottom: 2rem;
+}
+
+.viewer-container {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 2rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.viewer-container > * {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .viewer-container {
+    flex-direction: column;
+  }
+
+  .viewer-container > * {
+    width: 100%;
+  }
 }
 </style>

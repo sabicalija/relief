@@ -1,5 +1,5 @@
 <template>
-  <div v-if="imageStore.depthMap" class="viewer-container">
+  <div v-if="imageStore.depthMap" class="viewer-wrapper">
     <h2>3D Preview</h2>
     <div ref="viewerRef" class="viewer"></div>
     <div class="viewer-controls">
@@ -161,15 +161,18 @@ function downloadSTL() {
 </script>
 
 <style scoped>
-.viewer-container {
-  max-width: 800px;
-  margin: 2rem auto;
+.viewer-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.viewer-container h2 {
+.viewer-wrapper h2 {
   font-size: 1.5rem;
   color: #2c3e50;
   margin-bottom: 1rem;
+  margin-top: 0;
+  text-align: left;
 }
 
 .viewer {
@@ -178,6 +181,7 @@ function downloadSTL() {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex-grow: 1;
 }
 
 .viewer-controls {

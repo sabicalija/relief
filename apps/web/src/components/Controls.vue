@@ -88,25 +88,29 @@ const handleHeightChange = (event) => {
 
 <style scoped>
 .controls {
-  max-width: 600px;
+  width: 100%;
+  max-width: 1400px;
   margin: 2rem auto;
   padding: 1.5rem;
   background-color: #f8f9fa;
   border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
 }
 
 .controls h2 {
   font-size: 1.25rem;
   color: #2c3e50;
-  margin-bottom: 1.5rem;
-  margin-top: 0;
+  margin: 0 0 0.5rem 0;
+  grid-column: 1 / -1;
 }
 
 .control-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
 }
 
 .control-group:last-child {
@@ -114,7 +118,7 @@ const handleHeightChange = (event) => {
 }
 
 label {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #2c3e50;
 }
@@ -163,9 +167,7 @@ label {
 }
 
 .dimensions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  display: contents;
 }
 
 .number-input {
@@ -183,5 +185,17 @@ label {
 
 .number-input::placeholder {
   color: #999;
+}
+
+@media (max-width: 1024px) {
+  .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
