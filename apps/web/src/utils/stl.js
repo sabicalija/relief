@@ -181,12 +181,28 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   geometry.setIndex(faces);
   geometry.computeVertexNormals();
 
-  // Create mesh
+  // Generate UV coordinates for texture mapping
+  const uvs = new Float32Array(vertices.length * 2);
+  const numCols = segmentsX + 1;
+  vertices.forEach((v, i) => {
+    const col = i % numCols;
+    const row = Math.floor(i / numCols);
+    uvs[i * 2] = col / segmentsX; // U coordinate (0-1)
+    uvs[i * 2 + 1] = 1 - row / segmentsY; // V coordinate (0-1, flipped)
+  });
+  geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+
+  // Load texture from depth map image
+  const textureLoader = new THREE.TextureLoader();
+  const texture = textureLoader.load(imageDataUrl);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  // Create mesh with texture
   const material = new THREE.MeshStandardMaterial({
-    color: 0x808080,
+    map: texture, // Apply the depth map as texture
     metalness: 0.3,
     roughness: 0.7,
-    side: THREE.DoubleSide, // Render both sides
+    side: THREE.DoubleSide,
   });
   const mesh = new THREE.Mesh(geometry, material);
 
