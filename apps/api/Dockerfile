@@ -7,13 +7,16 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --default-timeout=1000 --retries 10 -r requirements.txt
 
-# Pre-fetch MiDaS weights to reduce cold-starts
+# Cache hub/weights into the image layers
+ENV TORCH_HOME=/root/.cache/torch
 RUN python - <<'PY'
-import torch
-torch.hub.load("intel-isl/MiDaS", "DPT_Large", pretrained=True)
-torch.hub.load("intel-isl/MiDaS", "transforms")
+import torch, os
+model = os.getenv("MODEL_NAME","DPT_Hybrid")
+torch.hub.load("intel-isl/MiDaS", model, pretrained=True)
+_ = torch.hub.load("intel-isl/MiDaS", "transforms")
+print("Prefetched", model, "and transforms")
 PY
 
 COPY app.py .
 ENV PORT=8080
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips", "*"]
