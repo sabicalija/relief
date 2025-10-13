@@ -2,13 +2,17 @@
   <div class="app">
     <h1>Relief</h1>
     <Upload />
+    <Controls />
+    <Viewer />
     <Preview />
   </div>
 </template>
 
 <script setup>
 import Upload from "./components/Upload.vue";
+import Controls from "./components/Controls.vue";
 import Preview from "./components/Preview.vue";
+import Viewer from "./components/Viewer.vue";
 </script>
 
 <style scoped>

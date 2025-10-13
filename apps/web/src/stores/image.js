@@ -5,8 +5,8 @@ export const useImageStore = defineStore("image", () => {
   const depthMap = ref(null);
 
   // Relief config parameters - all in mm for consistency
-  const targetDepthMm = ref(100.0); // Default 100mm depth
-  const baseThicknessMm = ref(20.0); // Default 20mm base
+  const targetDepthMm = ref(20.0);
+  const baseThicknessMm = ref(10.0);
   const targetWidthMm = ref(null);
   const targetHeightMm = ref(null);
 
