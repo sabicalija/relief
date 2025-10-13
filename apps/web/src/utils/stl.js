@@ -190,12 +190,14 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   });
   const mesh = new THREE.Mesh(geometry, material);
 
-  // Rotate to proper orientation
+  // Rotate to lie flat on XZ plane with relief pointing up
   mesh.rotation.x = -Math.PI / 2;
+  mesh.rotation.y = Math.PI;
+  mesh.rotation.z = Math.PI;
+  mesh.scale.z = -1;
 
   return mesh;
 }
-
 /**
  * Export mesh to STL format
  * @param {THREE.Mesh} mesh - The mesh to export

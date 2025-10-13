@@ -3,6 +3,18 @@
     <h2>3D Preview</h2>
     <div ref="viewerRef" class="viewer"></div>
     <div class="viewer-controls">
+      <div class="view-buttons">
+        <button @click="setTopView" class="btn btn-view">Top</button>
+        <button @click="setBottomView" class="btn btn-view">Bottom</button>
+        <button @click="setFrontView" class="btn btn-view">Front</button>
+        <button @click="setBackView" class="btn btn-view">Back</button>
+        <button @click="setLeftView" class="btn btn-view">Left</button>
+        <button @click="setRightView" class="btn btn-view">Right</button>
+        <button @click="setIsometricView" class="btn btn-view">Isometric</button>
+        <button @click="toggleProjection" class="btn btn-view btn-projection">
+          {{ isPerspective ? "Perspective" : "Orthographic" }}
+        </button>
+      </div>
       <button @click="downloadSTL" class="btn btn-download">Download STL</button>
     </div>
   </div>
@@ -17,8 +29,9 @@ import { createMeshFromDepthMap, exportToSTL, download } from "../utils/stl";
 
 const imageStore = useImageStore();
 const viewerRef = ref(null);
+const isPerspective = ref(true);
 
-let scene, camera, renderer, controls, currentMesh;
+let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, currentMesh;
 let isInitialized = false;
 
 onUnmounted(() => {
@@ -62,12 +75,29 @@ function initThreeJS() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0f0f0);
 
-  // Camera
+  // Cameras
   const width = viewerRef.value.clientWidth || 800;
   const height = viewerRef.value.clientHeight || 500;
   const aspect = width / height;
-  camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 10000);
-  camera.position.set(0, 100, 200);
+
+  // Perspective camera
+  perspectiveCamera = new THREE.PerspectiveCamera(45, aspect, 0.1, 10000);
+  perspectiveCamera.position.set(0, 100, 200);
+
+  // Orthographic camera
+  const frustumSize = 200;
+  orthographicCamera = new THREE.OrthographicCamera(
+    (frustumSize * aspect) / -2,
+    (frustumSize * aspect) / 2,
+    frustumSize / 2,
+    frustumSize / -2,
+    0.1,
+    10000
+  );
+  orthographicCamera.position.set(0, 100, 200);
+
+  // Set active camera
+  camera = perspectiveCamera;
 
   // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -90,6 +120,7 @@ function initThreeJS() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
+  controls.listenToKeyEvents(window); // Enable arrow keys for rotation
 
   // Grid helper
   const gridHelper = new THREE.GridHelper(200, 20);
@@ -144,6 +175,191 @@ async function updatePreview() {
   }
 }
 
+function updateOrthographicFrustum(size, distance) {
+  if (!isPerspective.value && orthographicCamera) {
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const frustumSize = maxDim * 1.2;
+    const aspect = renderer.domElement.width / renderer.domElement.height;
+
+    orthographicCamera.left = (frustumSize * aspect) / -2;
+    orthographicCamera.right = (frustumSize * aspect) / 2;
+    orthographicCamera.top = frustumSize / 2;
+    orthographicCamera.bottom = frustumSize / -2;
+    orthographicCamera.updateProjectionMatrix();
+  }
+}
+
+function setTopView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.x, size.z);
+  const distance = isPerspective.value
+    ? (maxDim / (2 * Math.tan((perspectiveCamera.fov * Math.PI) / 360))) * 1.5
+    : maxDim * 1.5;
+
+  camera.position.set(center.x, center.y + distance, center.z);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  updateOrthographicFrustum(size, distance);
+  controls.update();
+}
+
+function setBottomView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.x, size.z);
+  const distance = isPerspective.value
+    ? (maxDim / (2 * Math.tan((perspectiveCamera.fov * Math.PI) / 360))) * 1.5
+    : maxDim * 1.5;
+
+  camera.position.set(center.x, center.y - distance, center.z);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  updateOrthographicFrustum(size, distance);
+  controls.update();
+}
+
+function setFrontView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.x, size.y);
+  const distance = isPerspective.value
+    ? (maxDim / (2 * Math.tan((perspectiveCamera.fov * Math.PI) / 360))) * 1.5
+    : maxDim * 1.5;
+
+  camera.position.set(center.x, center.y, center.z + distance);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  updateOrthographicFrustum(size, distance);
+  controls.update();
+}
+
+function setBackView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.x, size.y);
+  const distance = isPerspective.value
+    ? (maxDim / (2 * Math.tan((perspectiveCamera.fov * Math.PI) / 360))) * 1.5
+    : maxDim * 1.5;
+
+  camera.position.set(center.x, center.y, center.z - distance);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  updateOrthographicFrustum(size, distance);
+  controls.update();
+}
+
+function setLeftView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.y, size.z);
+  const distance = isPerspective.value
+    ? (maxDim / (2 * Math.tan((perspectiveCamera.fov * Math.PI) / 360))) * 1.5
+    : maxDim * 1.5;
+
+  camera.position.set(center.x - distance, center.y, center.z);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  updateOrthographicFrustum(size, distance);
+  controls.update();
+}
+
+function setRightView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.y, size.z);
+  const distance = isPerspective.value
+    ? (maxDim / (2 * Math.tan((perspectiveCamera.fov * Math.PI) / 360))) * 1.5
+    : maxDim * 1.5;
+
+  camera.position.set(center.x + distance, center.y, center.z);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  updateOrthographicFrustum(size, distance);
+  controls.update();
+}
+
+function setIsometricView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const distance = maxDim * 1.5;
+
+  // Isometric view: equal angles (roughly 45° on all axes)
+  camera.position.set(center.x + distance, center.y + distance, center.z + distance);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  updateOrthographicFrustum(size, distance);
+  controls.update();
+}
+
+function toggleProjection() {
+  if (!perspectiveCamera || !orthographicCamera || !controls) return;
+
+  // Store current camera state
+  const oldCamera = camera;
+  const position = oldCamera.position.clone();
+  const target = controls.target.clone();
+
+  // Switch camera
+  isPerspective.value = !isPerspective.value;
+  camera = isPerspective.value ? perspectiveCamera : orthographicCamera;
+
+  // Transfer position and target to new camera
+  camera.position.copy(position);
+  camera.lookAt(target);
+
+  // Update controls to use new camera
+  controls.object = camera;
+  controls.target.copy(target);
+  controls.update();
+
+  // If switching to orthographic, adjust zoom to match view
+  if (!isPerspective.value && currentMesh) {
+    const box = new THREE.Box3().setFromObject(currentMesh);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const distance = camera.position.distanceTo(target);
+
+    // Adjust orthographic camera frustum based on distance
+    const frustumSize = maxDim * (distance / 100);
+    const aspect = renderer.domElement.width / renderer.domElement.height;
+    orthographicCamera.left = (frustumSize * aspect) / -2;
+    orthographicCamera.right = (frustumSize * aspect) / 2;
+    orthographicCamera.top = frustumSize / 2;
+    orthographicCamera.bottom = frustumSize / -2;
+    orthographicCamera.updateProjectionMatrix();
+  }
+}
+
 function downloadSTL() {
   if (!currentMesh) {
     alert("No mesh to export");
@@ -188,17 +404,24 @@ function downloadSTL() {
   margin-top: 1rem;
   text-align: center;
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.view-buttons {
+  display: flex;
+  gap: 0.5rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn {
-  padding: 1rem 2rem;
+  padding: 0.75rem 1.5rem;
   background-color: #42b983;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: background-color 0.3s;
 }
@@ -212,8 +435,28 @@ function downloadSTL() {
   cursor: not-allowed;
 }
 
+.btn-view {
+  background-color: #6c757d;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.btn-view:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.btn-projection {
+  background-color: #17a2b8;
+}
+
+.btn-projection:hover:not(:disabled) {
+  background-color: #138496;
+}
+
 .btn-download {
   background-color: #3498db;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
 }
 
 .btn-download:hover:not(:disabled) {
