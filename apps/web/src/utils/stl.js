@@ -228,6 +228,15 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   });
   geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
 
+  // Define material groups for different parts of the mesh
+  // Group 0: Top surface (with texture)
+  const topFaceCount = segmentsX * segmentsY * 2 * 3; // 2 triangles per quad, 3 vertices per triangle
+  geometry.addGroup(0, topFaceCount, 0);
+
+  // Group 1: Bottom and walls (solid color)
+  const remainingFaces = faces.length - topFaceCount;
+  geometry.addGroup(topFaceCount, remainingFaces, 1);
+
   // Load texture from depth map image (if enabled)
   let texture = null;
   if (config.showTexture !== false) {
@@ -236,14 +245,26 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     texture.colorSpace = THREE.SRGBColorSpace;
   }
 
-  // Create mesh with optional texture
-  const material = new THREE.MeshStandardMaterial({
-    map: texture, // Apply the depth map as texture (or null)
-    metalness: 0.3,
-    roughness: 0.7,
-    side: THREE.DoubleSide,
-  });
-  const mesh = new THREE.Mesh(geometry, material);
+  // Create materials array
+  const baseColor = config.baseColor || "#808080";
+  const materials = [
+    // Material 0: Top surface with optional texture
+    new THREE.MeshStandardMaterial({
+      map: texture, // Apply the depth map as texture (or null)
+      metalness: 0.3,
+      roughness: 0.7,
+      side: THREE.DoubleSide,
+    }),
+    // Material 1: Bottom and walls with solid color
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color(baseColor),
+      metalness: 0.3,
+      roughness: 0.7,
+      side: THREE.DoubleSide,
+    }),
+  ];
+
+  const mesh = new THREE.Mesh(geometry, materials);
 
   // Store mesh resolution as user data for display
   mesh.userData.resolution = {

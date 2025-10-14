@@ -13,6 +13,7 @@ export const useImageStore = defineStore("image", () => {
   const maxResolution = ref(1024); // Maximum resolution for mesh generation
   const showTexture = ref(true); // Toggle for depth map texture projection
   const showGrid = ref(true); // Toggle for grid helper in viewer
+  const baseColor = ref("#808080"); // Color for perimeter walls and bottom surface
 
   function setDepthMap(imageData) {
     depthMap.value = imageData;
@@ -85,6 +86,10 @@ export const useImageStore = defineStore("image", () => {
     showGrid.value = value;
   }
 
+  function setBaseColor(value) {
+    baseColor.value = value;
+  }
+
   return {
     depthMap,
     imageDimensions,
@@ -95,6 +100,7 @@ export const useImageStore = defineStore("image", () => {
     maxResolution,
     showTexture,
     showGrid,
+    baseColor,
     setDepthMap,
     clearDepthMap,
     setImageDimensions,
@@ -105,5 +111,6 @@ export const useImageStore = defineStore("image", () => {
     setMaxResolution,
     setShowTexture,
     setShowGrid,
+    setBaseColor,
   };
 });

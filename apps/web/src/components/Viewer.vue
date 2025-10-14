@@ -49,6 +49,16 @@
           <span>Show Grid</span>
         </label>
       </div>
+      <div class="color-control">
+        <label for="base-color">Base Color</label>
+        <input
+          id="base-color"
+          type="color"
+          v-model="imageStore.baseColor"
+          @input="updateBaseColor"
+          class="color-input"
+        />
+      </div>
       <button @click="downloadSTL" class="btn btn-download">Download STL</button>
     </div>
   </div>
@@ -183,7 +193,17 @@ async function updatePreview() {
     if (currentMesh) {
       scene.remove(currentMesh);
       currentMesh.geometry.dispose();
-      currentMesh.material.dispose();
+
+      // Dispose materials (handle both single material and material array)
+      if (Array.isArray(currentMesh.material)) {
+        currentMesh.material.forEach((material) => {
+          if (material.map) material.map.dispose();
+          material.dispose();
+        });
+      } else {
+        if (currentMesh.material.map) currentMesh.material.map.dispose();
+        currentMesh.material.dispose();
+      }
     }
 
     // Generate new mesh
@@ -194,6 +214,7 @@ async function updatePreview() {
       targetHeightMm: imageStore.targetHeightMm,
       maxResolution: imageStore.maxResolution,
       showTexture: imageStore.showTexture,
+      baseColor: imageStore.baseColor,
     };
 
     const mesh = await createMeshFromDepthMap(imageStore.depthMap, config);
@@ -463,27 +484,54 @@ function updateLightIntensity() {
 function toggleTexture() {
   if (!currentMesh) return;
 
-  // Toggle texture map on the material
-  if (imageStore.showTexture && currentMesh.material.map) {
-    // Texture is already applied, keep it
-    currentMesh.material.map.needsUpdate = true;
-  } else if (imageStore.showTexture && !currentMesh.material.map) {
-    // Need to load and apply texture
-    const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load(imageStore.depthMap);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    currentMesh.material.map = texture;
-    currentMesh.material.needsUpdate = true;
-  } else {
-    // Remove texture
-    currentMesh.material.map = null;
-    currentMesh.material.needsUpdate = true;
+  // Handle multi-material mesh
+  if (Array.isArray(currentMesh.material)) {
+    const topMaterial = currentMesh.material[0]; // Top surface material
+
+    if (imageStore.showTexture && topMaterial.map) {
+      // Texture is already applied, reset color to white so texture shows correctly
+      topMaterial.color.set(0xffffff);
+      topMaterial.map.needsUpdate = true;
+      topMaterial.needsUpdate = true;
+    } else if (imageStore.showTexture && !topMaterial.map) {
+      // Need to load and apply texture
+      const textureLoader = new THREE.TextureLoader();
+      const texture = textureLoader.load(imageStore.depthMap);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      topMaterial.map = texture;
+      topMaterial.color.set(0xffffff); // Reset to white for proper texture display
+      topMaterial.needsUpdate = true;
+    } else {
+      // Remove texture and use base color for top surface too
+      topMaterial.map = null;
+      topMaterial.color.set(imageStore.baseColor);
+      topMaterial.needsUpdate = true;
+    }
   }
 }
 
 function toggleGrid() {
   if (!gridHelper) return;
   gridHelper.visible = imageStore.showGrid;
+}
+
+function updateBaseColor() {
+  if (!currentMesh) return;
+
+  // Update base material colors
+  if (Array.isArray(currentMesh.material)) {
+    // Always update material[1] (bottom and walls)
+    if (currentMesh.material[1]) {
+      currentMesh.material[1].color.set(imageStore.baseColor);
+      currentMesh.material[1].needsUpdate = true;
+    }
+
+    // If texture is disabled, also update material[0] (top surface)
+    if (!imageStore.showTexture && currentMesh.material[0]) {
+      currentMesh.material[0].color.set(imageStore.baseColor);
+      currentMesh.material[0].needsUpdate = true;
+    }
+  }
 }
 
 function downloadSTL() {
@@ -672,6 +720,35 @@ function downloadSTL() {
 
 .texture-toggle span {
   user-select: none;
+}
+
+.color-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.color-control label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c3e50;
+  white-space: nowrap;
+}
+
+.color-control .color-input {
+  width: 50px;
+  height: 32px;
+  border: 2px solid #d3d3d3;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.color-control .color-input:hover,
+.color-control .color-input:focus {
+  border-color: #42b983;
 }
 
 .btn {
