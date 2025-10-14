@@ -12,6 +12,7 @@ export const useImageStore = defineStore("image", () => {
   const targetHeightMm = ref(null);
   const maxResolution = ref(1024); // Maximum resolution for mesh generation
   const showTexture = ref(true); // Toggle for depth map texture projection
+  const showGrid = ref(true); // Toggle for grid helper in viewer
 
   function setDepthMap(imageData) {
     depthMap.value = imageData;
@@ -80,6 +81,10 @@ export const useImageStore = defineStore("image", () => {
     showTexture.value = value;
   }
 
+  function setShowGrid(value) {
+    showGrid.value = value;
+  }
+
   return {
     depthMap,
     imageDimensions,
@@ -89,6 +94,7 @@ export const useImageStore = defineStore("image", () => {
     targetHeightMm,
     maxResolution,
     showTexture,
+    showGrid,
     setDepthMap,
     clearDepthMap,
     setImageDimensions,
@@ -98,5 +104,6 @@ export const useImageStore = defineStore("image", () => {
     setTargetHeightMm,
     setMaxResolution,
     setShowTexture,
+    setShowGrid,
   };
 });

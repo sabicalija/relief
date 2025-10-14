@@ -43,6 +43,12 @@
           <span>Show Texture</span>
         </label>
       </div>
+      <div class="texture-toggle">
+        <label>
+          <input type="checkbox" v-model="imageStore.showGrid" @change="toggleGrid" />
+          <span>Show Grid</span>
+        </label>
+      </div>
       <button @click="downloadSTL" class="btn btn-download">Download STL</button>
     </div>
   </div>
@@ -64,6 +70,7 @@ const meshStats = ref(null);
 
 let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, currentMesh;
 let ambientLight, directionalLight1, directionalLight2;
+let gridHelper;
 let isInitialized = false;
 
 onUnmounted(() => {
@@ -156,7 +163,8 @@ function initThreeJS() {
   controls.listenToKeyEvents(window); // Enable arrow keys for rotation
 
   // Grid helper
-  const gridHelper = new THREE.GridHelper(200, 20);
+  gridHelper = new THREE.GridHelper(200, 20);
+  gridHelper.visible = imageStore.showGrid;
   scene.add(gridHelper);
 
   // Animation loop
@@ -471,6 +479,11 @@ function toggleTexture() {
     currentMesh.material.map = null;
     currentMesh.material.needsUpdate = true;
   }
+}
+
+function toggleGrid() {
+  if (!gridHelper) return;
+  gridHelper.visible = imageStore.showGrid;
 }
 
 function downloadSTL() {
