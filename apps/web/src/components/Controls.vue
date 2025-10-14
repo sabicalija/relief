@@ -325,11 +325,6 @@ const targetResolutionPrefix = computed(() => {
   const maxRes = imageStore.maxResolution;
   const maxDim = Math.max(width, height);
 
-  // If image is smaller than maxResolution, use original size
-  if (maxDim <= maxRes) {
-    return `${width}×${height}`;
-  }
-
   // Calculate the smaller dimension based on aspect ratio
   const scale = maxRes / maxDim;
   const targetWidth = Math.floor(width * scale);
