@@ -18,6 +18,13 @@ export const useImageStore = defineStore("image", () => {
   const showGrid = ref(true); // Toggle for grid helper in viewer
   const baseColor = ref("#808080"); // Color for perimeter walls and bottom surface
 
+  // Advanced depth enhancement options
+  const enhanceDetails = ref(false); // Enable adaptive depth enhancement
+  const detailEnhancementStrength = ref(1.5); // How much to enhance fine details (1.0 = no enhancement)
+  const detailThreshold = ref(0.1); // Threshold for what counts as "close" values (0.0-1.0)
+  const preserveMajorFeatures = ref(true); // Keep large depth differences intact
+  const smoothingKernelSize = ref(3); // Size of smoothing kernel for noise reduction
+
   function setDepthMap(imageData) {
     depthMap.value = imageData;
   }
@@ -108,6 +115,35 @@ export const useImageStore = defineStore("image", () => {
     useCustomTexture.value = value;
   }
 
+  function setEnhanceDetails(value) {
+    enhanceDetails.value = value;
+  }
+
+  function setDetailEnhancementStrength(value) {
+    const parsed = parseFloat(value);
+    // Validate: must be between 1.0 and 5.0
+    detailEnhancementStrength.value = Math.max(1.0, Math.min(5.0, parsed || 1.5));
+  }
+
+  function setDetailThreshold(value) {
+    const parsed = parseFloat(value);
+    // Validate: must be between 0.0 and 1.0
+    detailThreshold.value = Math.max(0.0, Math.min(1.0, parsed || 0.1));
+  }
+
+  function setPreserveMajorFeatures(value) {
+    preserveMajorFeatures.value = value;
+  }
+
+  function setSmoothingKernelSize(value) {
+    const parsed = parseInt(value);
+    // Validate: must be odd number between 1 and 15
+    let validated = Math.max(1, Math.min(15, parsed || 3));
+    // Make it odd
+    if (validated % 2 === 0) validated += 1;
+    smoothingKernelSize.value = validated;
+  }
+
   return {
     depthMap,
     textureMap,
@@ -122,6 +158,11 @@ export const useImageStore = defineStore("image", () => {
     showTexture,
     showGrid,
     baseColor,
+    enhanceDetails,
+    detailEnhancementStrength,
+    detailThreshold,
+    preserveMajorFeatures,
+    smoothingKernelSize,
     setDepthMap,
     setTextureMap,
     setUseCustomTexture,
@@ -136,5 +177,10 @@ export const useImageStore = defineStore("image", () => {
     setShowTexture,
     setShowGrid,
     setBaseColor,
+    setEnhanceDetails,
+    setDetailEnhancementStrength,
+    setDetailThreshold,
+    setPreserveMajorFeatures,
+    setSmoothingKernelSize,
   };
 });

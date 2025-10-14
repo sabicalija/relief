@@ -129,6 +129,89 @@
         resolution, 10% = 1/10th resolution. Fast and responsive at any level.
       </p>
     </div>
+
+    <div class="advanced-section">
+      <h3 class="section-title">
+        <button @click="toggleAdvanced" class="toggle-btn">
+          <span class="toggle-icon">{{ showAdvanced ? "▼" : "▶" }}</span>
+          Advanced Depth Enhancement
+        </button>
+      </h3>
+
+      <div v-if="showAdvanced" class="advanced-controls">
+        <div class="control-group">
+          <label>
+            <input type="checkbox" v-model="imageStore.enhanceDetails" class="checkbox-input" />
+            <span>Enable Detail Enhancement</span>
+          </label>
+          <p class="hint">Emphasize fine details while preserving major features for better 3D printing.</p>
+        </div>
+
+        <div v-if="imageStore.enhanceDetails" class="enhancement-options">
+          <div class="control-group">
+            <label for="enhancement-strength">
+              Enhancement Strength
+              <span class="value-display">{{ imageStore.detailEnhancementStrength.toFixed(1) }}</span>
+            </label>
+            <input
+              id="enhancement-strength"
+              type="range"
+              min="1.0"
+              max="5.0"
+              step="0.1"
+              v-model.number="imageStore.detailEnhancementStrength"
+              @input="handleEnhancementStrengthChange"
+              class="slider"
+            />
+            <p class="hint">How much to enhance fine details (1.0 = no enhancement, higher = more detail).</p>
+          </div>
+
+          <div class="control-group">
+            <label for="detail-threshold">
+              Detail Threshold
+              <span class="value-display">{{ imageStore.detailThreshold.toFixed(2) }}</span>
+            </label>
+            <input
+              id="detail-threshold"
+              type="range"
+              min="0.0"
+              max="1.0"
+              step="0.01"
+              v-model.number="imageStore.detailThreshold"
+              @input="handleDetailThresholdChange"
+              class="slider"
+            />
+            <p class="hint">What counts as "fine detail" vs "major feature" (lower = more sensitive).</p>
+          </div>
+
+          <div class="control-group">
+            <label for="smoothing-kernel">
+              Smoothing Kernel Size
+              <span class="value-display">{{ imageStore.smoothingKernelSize }}</span>
+            </label>
+            <input
+              id="smoothing-kernel"
+              type="range"
+              min="1"
+              max="15"
+              step="2"
+              v-model.number="imageStore.smoothingKernelSize"
+              @input="handleSmoothingKernelChange"
+              class="slider"
+            />
+            <p class="hint">Noise reduction before enhancement (1 = none, higher = more smoothing).</p>
+          </div>
+
+          <div class="control-group">
+            <label>
+              <input type="checkbox" v-model="imageStore.preserveMajorFeatures" class="checkbox-input" />
+              <span>Preserve Major Features</span>
+            </label>
+            <p class="hint">Keep large depth differences intact while enhancing fine details.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -141,10 +224,17 @@ const imageStore = useImageStore();
 // Local state for simplification slider (updates immediately for smooth UI)
 const localSimplificationRatio = ref(1.0);
 
+// State for advanced settings toggle
+const showAdvanced = ref(false);
+
 // Initialize from store
 localSimplificationRatio.value = imageStore.simplificationRatio;
 
 let simplificationDebounceTimer = null;
+
+const toggleAdvanced = () => {
+  showAdvanced.value = !showAdvanced.value;
+};
 
 const handleDepthChange = (event) => {
   // Validation happens in the store
@@ -154,6 +244,18 @@ const handleDepthChange = (event) => {
 const handleBaseThicknessChange = (event) => {
   // Validation happens in the store
   imageStore.setBaseThicknessMm(event.target.value);
+};
+
+const handleEnhancementStrengthChange = (event) => {
+  imageStore.setDetailEnhancementStrength(event.target.value);
+};
+
+const handleDetailThresholdChange = (event) => {
+  imageStore.setDetailThreshold(event.target.value);
+};
+
+const handleSmoothingKernelChange = (event) => {
+  imageStore.setSmoothingKernelSize(event.target.value);
 };
 
 // Handler for slider change (mouse release) - triggers recalculation with debounce
@@ -480,6 +582,72 @@ label {
   gap: 0.4rem;
   flex-wrap: wrap;
   margin-top: 0.5rem;
+}
+
+.advanced-section {
+  grid-column: 1 / -1;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e9ecef;
+}
+
+.section-title {
+  margin: 0 0 1rem 0;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.toggle-btn:hover {
+  color: #42b983;
+}
+
+.toggle-icon {
+  font-size: 0.9rem;
+  color: #42b983;
+  transition: transform 0.2s;
+}
+
+.advanced-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.enhancement-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-left: 1.5rem;
+  border-left: 3px solid #42b983;
+  margin-top: 0.5rem;
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #42b983;
+  margin-right: 0.5rem;
+}
+
+.value-display {
+  float: right;
+  font-weight: 600;
+  color: #42b983;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 1024px) {

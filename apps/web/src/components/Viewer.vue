@@ -115,6 +115,11 @@ watch(
     imageStore.targetHeightMm,
     imageStore.maxResolution,
     imageStore.simplificationRatio,
+    imageStore.enhanceDetails,
+    imageStore.detailEnhancementStrength,
+    imageStore.detailThreshold,
+    imageStore.preserveMajorFeatures,
+    imageStore.smoothingKernelSize,
   ],
   async () => {
     if (imageStore.depthMap) {
@@ -236,6 +241,11 @@ async function updatePreview() {
       showTexture: imageStore.showTexture,
       textureMap: imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : null,
       baseColor: imageStore.baseColor,
+      enhanceDetails: imageStore.enhanceDetails,
+      detailEnhancementStrength: imageStore.detailEnhancementStrength,
+      detailThreshold: imageStore.detailThreshold,
+      preserveMajorFeatures: imageStore.preserveMajorFeatures,
+      smoothingKernelSize: imageStore.smoothingKernelSize,
     };
 
     if (imageStore.simplificationRatio < 1.0) {
