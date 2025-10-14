@@ -530,16 +530,20 @@ export function exportToSTL(mesh) {
   // Remove material groups (they cause issues with STL export)
   cleanGeometry.clearGroups();
 
-  // Compute normals if not present or if they need recalculation
+  // Apply the mesh's transformations directly to the geometry
+  // This bakes the rotation and scale into the vertex positions
+  cleanGeometry.applyMatrix4(mesh.matrix);
+
+  // Apply additional 180° rotation around X-axis for correct STL orientation
+  const fixRotation = new THREE.Matrix4().makeRotationX(Math.PI);
+  cleanGeometry.applyMatrix4(fixRotation);
+
+  // Compute normals after applying transformations
   cleanGeometry.computeVertexNormals();
 
-  // Create a temporary mesh with a single basic material for export
+  // Create a temporary mesh with identity transform for export
   const exportMesh = new THREE.Mesh(cleanGeometry, new THREE.MeshBasicMaterial());
-
-  // Copy the transform from the original mesh
-  exportMesh.position.copy(mesh.position);
-  exportMesh.rotation.copy(mesh.rotation);
-  exportMesh.scale.copy(mesh.scale);
+  // No need to copy transforms - they're already baked into the geometry
 
   // Use binary format for better performance and to avoid string length limits
   // Binary STL is much smaller and faster to generate than ASCII
