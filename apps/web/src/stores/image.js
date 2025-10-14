@@ -3,12 +3,14 @@ import { ref } from "vue";
 
 export const useImageStore = defineStore("image", () => {
   const depthMap = ref(null);
+  const imageDimensions = ref(null); // Store original image dimensions
 
   // Relief config parameters - all in mm for consistency
   const targetDepthMm = ref(20.0);
   const baseThicknessMm = ref(10.0);
   const targetWidthMm = ref(null);
   const targetHeightMm = ref(null);
+  const maxResolution = ref(1024); // Maximum resolution for mesh generation
 
   function setDepthMap(imageData) {
     depthMap.value = imageData;
@@ -16,6 +18,29 @@ export const useImageStore = defineStore("image", () => {
 
   function clearDepthMap() {
     depthMap.value = null;
+    imageDimensions.value = null;
+  }
+
+  function setImageDimensions(dimensions) {
+    imageDimensions.value = dimensions;
+  }
+
+  function setMaxResolution(value) {
+    const parsed = parseInt(value);
+
+    // If no dimensions yet, use safe default
+    if (!imageDimensions.value) {
+      maxResolution.value = Math.max(1, parsed || 1024);
+      return;
+    }
+
+    const { width, height } = imageDimensions.value;
+    const maxDim = Math.max(width, height);
+
+    // Validate: minimum 1px for the maxResolution, maximum is original max dimension
+    // This allows the smaller dimension to scale down below 1px if user wants
+    const validated = Math.max(1, Math.min(maxDim, parsed || 1024));
+    maxResolution.value = validated;
   }
 
   function setTargetDepthMm(value) {
@@ -52,15 +77,19 @@ export const useImageStore = defineStore("image", () => {
 
   return {
     depthMap,
+    imageDimensions,
     targetDepthMm,
     baseThicknessMm,
     targetWidthMm,
     targetHeightMm,
+    maxResolution,
     setDepthMap,
     clearDepthMap,
+    setImageDimensions,
     setTargetDepthMm,
     setBaseThicknessMm,
     setTargetWidthMm,
     setTargetHeightMm,
+    setMaxResolution,
   };
 });

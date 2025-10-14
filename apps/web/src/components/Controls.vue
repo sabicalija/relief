@@ -57,10 +57,51 @@
         />
       </div>
     </div>
+
+    <div class="control-group resolution-control">
+      <label>Resolution</label>
+      <div class="resolution-display">
+        <div class="resolution-info">
+          <span class="resolution-label">Source:</span>
+          <span class="resolution-value">{{ sourceResolution }} px</span>
+        </div>
+        <div class="resolution-info">
+          <span class="resolution-label">Target:</span>
+          <span class="resolution-value-editable">
+            {{ targetResolutionPrefix }}×<input
+              type="number"
+              :min="minResolutionAllowed"
+              :max="maxDimension"
+              step="1"
+              :value="imageStore.maxResolution"
+              @input="handleResolutionChange"
+              class="resolution-input"
+            />
+            px
+          </span>
+        </div>
+        <div class="resolution-scale">
+          <span class="resolution-label">Scale:</span>
+          <div class="resolution-buttons">
+            <button
+              v-for="preset in resolutionPresets"
+              :key="preset.value"
+              @click="setResolution(preset.value)"
+              :class="{ active: imageStore.maxResolution === preset.value }"
+              class="btn-preset"
+            >
+              {{ preset.label }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="hint">Click a ratio preset to adjust mesh resolution. Lower values improve performance.</p>
+    </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { useImageStore } from "../stores/image";
 
 const imageStore = useImageStore();
@@ -84,6 +125,80 @@ const handleHeightChange = (event) => {
   // Validation happens in the store
   imageStore.setTargetHeightMm(event.target.value);
 };
+
+const handleResolutionChange = (event) => {
+  imageStore.setMaxResolution(event.target.value);
+};
+
+const setResolution = (value) => {
+  imageStore.setMaxResolution(value);
+};
+
+// Get the maximum dimension from the image
+const maxDimension = computed(() => {
+  if (!imageStore.imageDimensions) return 4032;
+  return Math.max(imageStore.imageDimensions.width, imageStore.imageDimensions.height);
+});
+
+// Minimum resolution allowed (1px for the larger dimension)
+const minResolutionAllowed = computed(() => {
+  return 1;
+});
+
+// Source resolution display
+const sourceResolution = computed(() => {
+  if (!imageStore.imageDimensions) return "N/A";
+  return `${imageStore.imageDimensions.width}×${imageStore.imageDimensions.height}`;
+});
+
+// Target resolution prefix - the calculated dimension that's NOT the maxResolution
+// For 3024×4032 with maxRes=1024 → shows "768"
+const targetResolutionPrefix = computed(() => {
+  if (!imageStore.imageDimensions) return "N/A";
+
+  const { width, height } = imageStore.imageDimensions;
+  const maxRes = imageStore.maxResolution;
+  const maxDim = Math.max(width, height);
+
+  // If image is smaller than maxResolution, use original size
+  if (maxDim <= maxRes) {
+    return `${width}×${height}`;
+  }
+
+  // Calculate the smaller dimension based on aspect ratio
+  const scale = maxRes / maxDim;
+  const targetWidth = Math.floor(width * scale);
+  const targetHeight = Math.floor(height * scale);
+
+  // Return the dimension that's NOT maxResolution
+  // For 3024×4032 with maxRes=1024 → height is larger, so return width (768)
+  if (height > width) {
+    return targetWidth;
+  } else {
+    return targetHeight;
+  }
+});
+
+// Generate resolution presets as ratios based on image size
+const resolutionPresets = computed(() => {
+  const max = maxDimension.value;
+  const presets = [];
+
+  // Generate halvings with ratio labels: 1:1, 1:2, 1:4, 1:8, 1:16, 1:32
+  let current = max;
+  let divisor = 1;
+  while (current >= 128 && presets.length < 6) {
+    const label = divisor === 1 ? "1:1" : `1:${divisor}`;
+    presets.push({
+      label: label,
+      value: Math.round(current),
+    });
+    current = current / 2;
+    divisor = divisor * 2;
+  }
+
+  return presets;
+});
 </script>
 
 <style scoped>
@@ -185,6 +300,110 @@ label {
 
 .number-input::placeholder {
   color: #999;
+}
+
+.resolution-control {
+  grid-column: 1 / -1;
+}
+
+.resolution-display {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.resolution-info {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.resolution-scale {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.resolution-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.resolution-value {
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: "Courier New", monospace;
+  color: #42b983;
+  background-color: rgba(66, 185, 131, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.resolution-value-editable {
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: "Courier New", monospace;
+  color: #42b983;
+  background-color: rgba(66, 185, 131, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.resolution-input {
+  width: 70px;
+  padding: 0.1rem 0.3rem;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: "Courier New", monospace;
+  color: #42b983;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid #42b983;
+  border-radius: 0;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.resolution-input:focus {
+  border-bottom-color: #2c3e50;
+  background-color: rgba(66, 185, 131, 0.15);
+}
+
+.resolution-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-preset {
+  padding: 0.35rem 0.7rem;
+  background-color: #e9ecef;
+  color: #2c3e50;
+  border: 2px solid #d3d3d3;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-preset:hover {
+  background-color: #dee2e6;
+  border-color: #42b983;
+}
+
+.btn-preset.active {
+  background-color: #42b983;
+  color: white;
+  border-color: #42b983;
 }
 
 @media (max-width: 1024px) {

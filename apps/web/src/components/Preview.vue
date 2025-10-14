@@ -20,10 +20,13 @@ const imageDimensions = ref(null);
 
 function onImageLoad() {
   if (imageRef.value) {
-    imageDimensions.value = {
+    const dimensions = {
       width: imageRef.value.naturalWidth,
       height: imageRef.value.naturalHeight,
     };
+    imageDimensions.value = dimensions;
+    // Store dimensions in the store for use in other components
+    imageStore.setImageDimensions(dimensions);
   }
 }
 </script>

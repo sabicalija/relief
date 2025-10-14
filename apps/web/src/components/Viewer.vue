@@ -77,6 +77,7 @@ watch(
     imageStore.baseThicknessMm,
     imageStore.targetWidthMm,
     imageStore.targetHeightMm,
+    imageStore.maxResolution,
   ],
   async () => {
     if (imageStore.depthMap) {
@@ -177,6 +178,7 @@ async function updatePreview() {
       baseThicknessMm: imageStore.baseThicknessMm,
       targetWidthMm: imageStore.targetWidthMm,
       targetHeightMm: imageStore.targetHeightMm,
+      maxResolution: imageStore.maxResolution,
     };
 
     const mesh = await createMeshFromDepthMap(imageStore.depthMap, config);
