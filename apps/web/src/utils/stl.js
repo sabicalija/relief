@@ -289,8 +289,35 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
  */
 export function exportToSTL(mesh) {
   const exporter = new STLExporter();
-  const stlString = exporter.parse(mesh, { binary: false });
-  const stlBlob = new Blob([stlString], { type: "text/plain" });
+
+  // STL format doesn't support materials or groups, so we need to create a clean mesh
+  // Clone the geometry to avoid modifying the original
+  const cleanGeometry = mesh.geometry.clone();
+
+  // Remove material groups (they cause issues with STL export)
+  cleanGeometry.clearGroups();
+
+  // Compute normals if not present or if they need recalculation
+  cleanGeometry.computeVertexNormals();
+
+  // Create a temporary mesh with a single basic material for export
+  const exportMesh = new THREE.Mesh(cleanGeometry, new THREE.MeshBasicMaterial());
+
+  // Copy the transform from the original mesh
+  exportMesh.position.copy(mesh.position);
+  exportMesh.rotation.copy(mesh.rotation);
+  exportMesh.scale.copy(mesh.scale);
+
+  // Use binary format for better performance and to avoid string length limits
+  // Binary STL is much smaller and faster to generate than ASCII
+  const stlBinary = exporter.parse(exportMesh, { binary: true });
+  const stlBlob = new Blob([stlBinary], { type: "application/octet-stream" });
+
+  console.log(`📦 STL exported: ${(stlBlob.size / (1024 * 1024)).toFixed(2)} MB (binary format)`);
+
+  // Clean up
+  cleanGeometry.dispose();
+
   return stlBlob;
 }
 
