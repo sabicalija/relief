@@ -15,6 +15,19 @@
           {{ isPerspective ? "Perspective" : "Orthographic" }}
         </button>
       </div>
+      <div class="light-control">
+        <label for="light-intensity">Light Intensity</label>
+        <input
+          id="light-intensity"
+          type="range"
+          min="0.5"
+          max="5"
+          step="0.1"
+          v-model.number="lightIntensity"
+          @input="updateLightIntensity"
+        />
+        <span class="light-value">{{ Number(lightIntensity).toFixed(1) }}</span>
+      </div>
       <button @click="downloadSTL" class="btn btn-download">Download STL</button>
     </div>
   </div>
@@ -30,8 +43,10 @@ import { createMeshFromDepthMap, exportToSTL, download } from "../utils/stl";
 const imageStore = useImageStore();
 const viewerRef = ref(null);
 const isPerspective = ref(true);
+const lightIntensity = ref(2.0);
 
 let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, currentMesh;
+let ambientLight, directionalLight1, directionalLight2;
 let isInitialized = false;
 
 onUnmounted(() => {
@@ -105,14 +120,14 @@ function initThreeJS() {
   viewerRef.value.appendChild(renderer.domElement);
 
   // Lights
-  const ambientLight = new THREE.AmbientLight(0x404040, 2);
+  ambientLight = new THREE.AmbientLight(0x606060, lightIntensity.value * 1.5);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-  directionalLight.position.set(1, 1, 1);
-  scene.add(directionalLight);
+  directionalLight1 = new THREE.DirectionalLight(0xffffff, lightIntensity.value);
+  directionalLight1.position.set(1, 1, 1);
+  scene.add(directionalLight1);
 
-  const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+  directionalLight2 = new THREE.DirectionalLight(0xffffff, lightIntensity.value * 0.5);
   directionalLight2.position.set(-1, -1, -1);
   scene.add(directionalLight2);
 
@@ -163,13 +178,23 @@ async function updatePreview() {
     const size = box.getSize(new THREE.Vector3());
 
     const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180);
-    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    cameraZ *= 1.5; // Add some padding
 
-    camera.position.set(center.x, center.y + cameraZ / 2, center.z + cameraZ);
+    if (isPerspective.value) {
+      const fov = perspectiveCamera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+      cameraZ *= 1.5; // Add some padding
+
+      camera.position.set(center.x, center.y + cameraZ / 2, center.z + cameraZ);
+    } else {
+      // For orthographic camera, update frustum and position
+      const distance = maxDim * 1.5;
+      camera.position.set(center.x, center.y + distance / 2, center.z + distance);
+      updateOrthographicFrustum(size, distance);
+    }
+
     camera.lookAt(center);
     controls.target.copy(center);
+    controls.update();
   } catch (error) {
     console.error("Error updating preview:", error);
   }
@@ -360,6 +385,15 @@ function toggleProjection() {
   }
 }
 
+function updateLightIntensity() {
+  if (!ambientLight || !directionalLight1 || !directionalLight2) return;
+
+  const intensity = parseFloat(lightIntensity.value);
+  ambientLight.intensity = intensity * 1.5;
+  directionalLight1.intensity = intensity;
+  directionalLight2.intensity = intensity * 0.5;
+}
+
 function downloadSTL() {
   if (!currentMesh) {
     alert("No mesh to export");
@@ -411,8 +445,60 @@ function downloadSTL() {
 .view-buttons {
   display: flex;
   gap: 0.5rem;
-  justify-content: center;
+  justify-content: space-between;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+.light-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.light-control label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c3e50;
+  white-space: nowrap;
+}
+
+.light-control input[type="range"] {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #d3d3d3;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.light-control input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #42b983;
+  cursor: pointer;
+}
+
+.light-control input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #42b983;
+  cursor: pointer;
+  border: none;
+}
+
+.light-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #42b983;
+  min-width: 2rem;
+  text-align: center;
 }
 
 .btn {
