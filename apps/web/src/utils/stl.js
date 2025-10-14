@@ -14,6 +14,7 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     targetWidthMm = null,
     targetHeightMm = null,
     maxResolution = 1024, // Reasonable default that balances quality and performance
+    decimation = 1, // Vertex decimation: 1 = no decimation, 2 = skip every other vertex, etc.
   } = config;
 
   // Load the depth map image

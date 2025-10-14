@@ -101,6 +101,7 @@ watch(
     imageStore.targetWidthMm,
     imageStore.targetHeightMm,
     imageStore.maxResolution,
+    imageStore.simplificationRatio,
   ],
   async () => {
     if (imageStore.depthMap) {
@@ -206,18 +207,33 @@ async function updatePreview() {
       }
     }
 
-    // Generate new mesh
+    // Generate new mesh with decimation applied
+    // Decimation works by reducing resolution: lower ratio = fewer vertices
+    const effectiveResolution = Math.max(
+      10, // Minimum 10px
+      Math.floor(imageStore.maxResolution * imageStore.simplificationRatio)
+    );
+
     const config = {
       targetDepthMm: imageStore.targetDepthMm,
       baseThicknessMm: imageStore.baseThicknessMm,
       targetWidthMm: imageStore.targetWidthMm,
       targetHeightMm: imageStore.targetHeightMm,
-      maxResolution: imageStore.maxResolution,
+      maxResolution: effectiveResolution,
       showTexture: imageStore.showTexture,
       baseColor: imageStore.baseColor,
     };
 
+    if (imageStore.simplificationRatio < 1.0) {
+      console.log(
+        `🔧 Applying decimation: ${imageStore.maxResolution}px → ${effectiveResolution}px (${(
+          imageStore.simplificationRatio * 100
+        ).toFixed(0)}%)`
+      );
+    }
+
     const mesh = await createMeshFromDepthMap(imageStore.depthMap, config);
+
     currentMesh = mesh;
     scene.add(mesh);
 

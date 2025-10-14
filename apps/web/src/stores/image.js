@@ -11,6 +11,7 @@ export const useImageStore = defineStore("image", () => {
   const targetWidthMm = ref(null);
   const targetHeightMm = ref(null);
   const maxResolution = ref(1024); // Maximum resolution for mesh generation
+  const simplificationRatio = ref(1.0); // Mesh simplification ratio (0.0-1.0, 1.0 = no simplification)
   const showTexture = ref(true); // Toggle for depth map texture projection
   const showGrid = ref(true); // Toggle for grid helper in viewer
   const baseColor = ref("#808080"); // Color for perimeter walls and bottom surface
@@ -90,6 +91,12 @@ export const useImageStore = defineStore("image", () => {
     baseColor.value = value;
   }
 
+  function setSimplificationRatio(value) {
+    const parsed = parseFloat(value);
+    // Validate: must be between 0.01 and 1.0
+    simplificationRatio.value = Math.max(0.01, Math.min(1.0, parsed || 1.0));
+  }
+
   return {
     depthMap,
     imageDimensions,
@@ -98,6 +105,7 @@ export const useImageStore = defineStore("image", () => {
     targetWidthMm,
     targetHeightMm,
     maxResolution,
+    simplificationRatio,
     showTexture,
     showGrid,
     baseColor,
@@ -109,6 +117,7 @@ export const useImageStore = defineStore("image", () => {
     setTargetWidthMm,
     setTargetHeightMm,
     setMaxResolution,
+    setSimplificationRatio,
     setShowTexture,
     setShowGrid,
     setBaseColor,

@@ -97,14 +97,54 @@
       </div>
       <p class="hint">Click a ratio preset to adjust mesh resolution. Lower values improve performance.</p>
     </div>
+
+    <div class="control-group">
+      <label for="simplification">
+        Simplification
+        <span class="simplification-value">{{ (localSimplificationRatio * 100).toFixed(0) }}%</span>
+      </label>
+      <input
+        id="simplification"
+        type="range"
+        min="0.01"
+        max="1"
+        step="0.01"
+        v-model.number="localSimplificationRatio"
+        @change="handleSimplificationChange"
+        class="slider"
+      />
+      <div class="simplification-presets">
+        <button
+          v-for="preset in simplificationPresets"
+          :key="preset"
+          @click="setSimplification(preset)"
+          :class="{ active: Math.abs(localSimplificationRatio - preset) < 0.01 }"
+          class="btn-preset"
+        >
+          {{ (preset * 100).toFixed(0) }}%
+        </button>
+      </div>
+      <p class="hint">
+        Reduce mesh complexity for smaller file sizes. Works by scaling down the effective resolution. 50% = half
+        resolution, 10% = 1/10th resolution. Fast and responsive at any level.
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useImageStore } from "../stores/image";
 
 const imageStore = useImageStore();
+
+// Local state for simplification slider (updates immediately for smooth UI)
+const localSimplificationRatio = ref(1.0);
+
+// Initialize from store
+localSimplificationRatio.value = imageStore.simplificationRatio;
+
+let simplificationDebounceTimer = null;
 
 const handleDepthChange = (event) => {
   // Validation happens in the store
@@ -115,6 +155,29 @@ const handleBaseThicknessChange = (event) => {
   // Validation happens in the store
   imageStore.setBaseThicknessMm(event.target.value);
 };
+
+// Handler for slider change (mouse release) - triggers recalculation with debounce
+const handleSimplificationChange = () => {
+  if (simplificationDebounceTimer) {
+    clearTimeout(simplificationDebounceTimer);
+  }
+
+  simplificationDebounceTimer = setTimeout(() => {
+    imageStore.setSimplificationRatio(localSimplificationRatio.value);
+  }, 300); // 300ms debounce after mouse release
+};
+
+// Direct setter for preset buttons (immediate, no debounce needed)
+const setSimplification = (value) => {
+  if (simplificationDebounceTimer) {
+    clearTimeout(simplificationDebounceTimer);
+  }
+  localSimplificationRatio.value = value;
+  imageStore.setSimplificationRatio(value);
+};
+
+// Simplification presets (10% to 100%)
+const simplificationPresets = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
 
 const handleWidthChange = (event) => {
   // Validation happens in the store
@@ -236,6 +299,12 @@ label {
   font-size: 0.9rem;
   font-weight: 600;
   color: #2c3e50;
+}
+
+.simplification-value {
+  font-weight: 500;
+  color: #42b983;
+  margin-left: 0.5rem;
 }
 
 .slider {
@@ -404,6 +473,13 @@ label {
   background-color: #42b983;
   color: white;
   border-color: #42b983;
+}
+
+.simplification-presets {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
 @media (max-width: 1024px) {
