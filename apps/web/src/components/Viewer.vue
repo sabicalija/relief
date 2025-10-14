@@ -37,6 +37,12 @@
         />
         <span class="light-value">{{ Number(lightIntensity).toFixed(1) }}</span>
       </div>
+      <div class="texture-toggle">
+        <label>
+          <input type="checkbox" v-model="imageStore.showTexture" @change="toggleTexture" />
+          <span>Show Texture</span>
+        </label>
+      </div>
       <button @click="downloadSTL" class="btn btn-download">Download STL</button>
     </div>
   </div>
@@ -69,7 +75,7 @@ onUnmounted(() => {
   }
 });
 
-// Watch for changes in depth map or parameters
+// Watch for changes in depth map or parameters (except showTexture)
 watch(
   () => [
     imageStore.depthMap,
@@ -179,6 +185,7 @@ async function updatePreview() {
       targetWidthMm: imageStore.targetWidthMm,
       targetHeightMm: imageStore.targetHeightMm,
       maxResolution: imageStore.maxResolution,
+      showTexture: imageStore.showTexture,
     };
 
     const mesh = await createMeshFromDepthMap(imageStore.depthMap, config);
@@ -445,6 +452,27 @@ function updateLightIntensity() {
   directionalLight2.intensity = intensity * 0.5;
 }
 
+function toggleTexture() {
+  if (!currentMesh) return;
+
+  // Toggle texture map on the material
+  if (imageStore.showTexture && currentMesh.material.map) {
+    // Texture is already applied, keep it
+    currentMesh.material.map.needsUpdate = true;
+  } else if (imageStore.showTexture && !currentMesh.material.map) {
+    // Need to load and apply texture
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load(imageStore.depthMap);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    currentMesh.material.map = texture;
+    currentMesh.material.needsUpdate = true;
+  } else {
+    // Remove texture
+    currentMesh.material.map = null;
+    currentMesh.material.needsUpdate = true;
+  }
+}
+
 function downloadSTL() {
   if (!currentMesh) {
     alert("No mesh to export");
@@ -604,6 +632,33 @@ function downloadSTL() {
   color: #42b983;
   min-width: 2rem;
   text-align: center;
+}
+
+.texture-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.texture-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.texture-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #42b983;
+}
+
+.texture-toggle span {
+  user-select: none;
 }
 
 .btn {

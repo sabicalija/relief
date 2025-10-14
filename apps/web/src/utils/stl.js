@@ -228,14 +228,17 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   });
   geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
 
-  // Load texture from depth map image
-  const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load(imageDataUrl);
-  texture.colorSpace = THREE.SRGBColorSpace;
+  // Load texture from depth map image (if enabled)
+  let texture = null;
+  if (config.showTexture !== false) {
+    const textureLoader = new THREE.TextureLoader();
+    texture = textureLoader.load(imageDataUrl);
+    texture.colorSpace = THREE.SRGBColorSpace;
+  }
 
-  // Create mesh with texture
+  // Create mesh with optional texture
   const material = new THREE.MeshStandardMaterial({
-    map: texture, // Apply the depth map as texture
+    map: texture, // Apply the depth map as texture (or null)
     metalness: 0.3,
     roughness: 0.7,
     side: THREE.DoubleSide,
