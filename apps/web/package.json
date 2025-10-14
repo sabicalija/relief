@@ -16,5 +16,6 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "vite": "^5.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.18.2"
 }
