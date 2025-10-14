@@ -538,7 +538,27 @@ export function exportToSTL(mesh) {
   const fixRotation = new THREE.Matrix4().makeRotationX(Math.PI);
   cleanGeometry.applyMatrix4(fixRotation);
 
-  // Compute normals after applying transformations
+  // Check if we need to flip face winding due to negative scale
+  // Negative scale inverts face normals, so we need to reverse the winding order
+  const scale = mesh.scale;
+  const hasNegativeScale = scale.x * scale.y * scale.z < 0;
+
+  if (hasNegativeScale) {
+    // Flip all triangle indices to reverse winding order
+    const index = cleanGeometry.index;
+    if (index) {
+      const indices = index.array;
+      for (let i = 0; i < indices.length; i += 3) {
+        // Swap first and third vertex of each triangle
+        const temp = indices[i];
+        indices[i] = indices[i + 2];
+        indices[i + 2] = temp;
+      }
+      index.needsUpdate = true;
+    }
+  }
+
+  // Compute normals after applying transformations and fixing winding
   cleanGeometry.computeVertexNormals();
 
   // Create a temporary mesh with identity transform for export
