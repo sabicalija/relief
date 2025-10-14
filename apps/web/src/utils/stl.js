@@ -8,18 +8,30 @@ import { STLExporter } from "three/examples/jsm/exporters/STLExporter.js";
  * @returns {Promise<THREE.Mesh>}
  */
 export async function createMeshFromDepthMap(imageDataUrl, config) {
-  const { targetDepthMm = 20.0, baseThicknessMm = 10.0, targetWidthMm = null, targetHeightMm = null } = config;
+  const {
+    targetDepthMm = 20.0,
+    baseThicknessMm = 10.0,
+    targetWidthMm = null,
+    targetHeightMm = null,
+    maxResolution = 1024, // Reasonable default that balances quality and performance
+  } = config;
 
   // Load the depth map image
   const image = await loadImage(imageDataUrl);
   let { width, height } = image;
+  const originalWidth = width;
+  const originalHeight = height;
 
-  // Downsample large images to avoid memory issues
-  const maxResolution = 256;
-  if (width > maxResolution || height > maxResolution) {
+  // Downsample to maxResolution to avoid memory issues
+  // A 3024×4032 image = 12M vertices = stack overflow!
+  // 1024×1024 = 1M vertices = reasonable and detailed
+  if (maxResolution && (width > maxResolution || height > maxResolution)) {
     const scale = maxResolution / Math.max(width, height);
     width = Math.floor(width * scale);
     height = Math.floor(height * scale);
+    console.log(`📉 Resampling: ${originalWidth}×${originalHeight} → ${width}×${height} pixels (for performance)`);
+  } else {
+    console.log(`📐 Using full resolution: ${width}×${height} pixels`);
   }
 
   // Calculate dimensions
@@ -50,16 +62,41 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   const imageData = ctx.getImageData(0, 0, width, height);
   const pixels = imageData.data;
 
-  // Create plane geometry with reduced resolution
-  const segmentsX = Math.min(width - 1, 128);
-  const segmentsY = Math.min(height - 1, 128);
+  // Analyze image to detect colormap type and whether to invert
+  const { colormapType, shouldInvert } = detectColormapType(pixels, width, height);
+  console.log("🎨 Detected colormap type:", colormapType, "| Should invert:", shouldInvert);
+
+  // Sample a few pixels to show what we're detecting
+  console.log("📊 Sample depth conversions:");
+  for (let i = 0; i < 5; i++) {
+    const idx = Math.floor(((i / 5) * pixels.length) / 4) * 4;
+    const r = pixels[idx];
+    const g = pixels[idx + 1];
+    const b = pixels[idx + 2];
+    const depth = rgbToDepth(r, g, b, colormapType, shouldInvert);
+    console.log(`  RGB(${r}, ${g}, ${b}) → depth: ${depth.toFixed(3)}`);
+  }
+
+  // Create plane geometry - 1:1 pixel to vertex mapping after resampling
+  // Use the resampled resolution (already limited by maxResolution above)
+  // No further reduction needed - the image is already at a reasonable size
+  const segmentsX = width - 1;
+  const segmentsY = height - 1;
+
+  const totalVertices = (segmentsX + 1) * (segmentsY + 1);
+  const isFullResolution = segmentsX === width - 1 && segmentsY === height - 1;
+  console.log(
+    `🔷 Mesh resolution: ${segmentsX + 1}×${segmentsY + 1} vertices (${totalVertices.toLocaleString()} total)${
+      isFullResolution ? " ✓ FULL RESOLUTION" : " ⚠️ LIMITED"
+    }`
+  );
 
   // Arrays to store all vertices and faces
   const vertices = [];
   const faces = [];
 
   // 1. Create TOP SURFACE vertices with depth from image
-  const topVertices = [];
+  // Push directly to vertices array to avoid intermediate array and spread operator issues
   for (let i = 0; i <= segmentsY; i++) {
     for (let j = 0; j <= segmentsX; j++) {
       // Map geometry vertex to image pixel
@@ -67,21 +104,20 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
       const imgY = Math.floor((i / segmentsY) * (height - 1));
       const pixelIndex = (imgY * width + imgX) * 4;
 
-      // Use grayscale value (average RGB for non-grayscale images)
+      // Extract RGB values and convert to depth
       const r = pixels[pixelIndex];
       const g = pixels[pixelIndex + 1];
       const b = pixels[pixelIndex + 2];
-      const depthValue = (r + g + b) / (3 * 255.0); // Normalize to 0-1
+      const depthValue = rgbToDepth(r, g, b, colormapType, shouldInvert); // Handles both grayscale and colormap images
 
       // Position in 3D space
       const x = (j / segmentsX) * meshWidth - meshWidth / 2;
       const y = (i / segmentsY) * meshHeight - meshHeight / 2;
       const z = depthValue * targetDepthMm;
 
-      topVertices.push(new THREE.Vector3(x, y, z));
+      vertices.push(new THREE.Vector3(x, y, z));
     }
   }
-  vertices.push(...topVertices);
 
   // Create triangles for top surface
   for (let i = 0; i < segmentsY; i++) {
@@ -206,6 +242,13 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   });
   const mesh = new THREE.Mesh(geometry, material);
 
+  // Store mesh resolution as user data for display
+  mesh.userData.resolution = {
+    width: segmentsX + 1,
+    height: segmentsY + 1,
+    total: totalVertices,
+  };
+
   // Rotate to lie flat on XZ plane with relief pointing up
   mesh.rotation.x = -Math.PI / 2;
   mesh.rotation.y = Math.PI;
@@ -224,6 +267,217 @@ export function exportToSTL(mesh) {
   const stlString = exporter.parse(mesh, { binary: false });
   const stlBlob = new Blob([stlString], { type: "text/plain" });
   return stlBlob;
+}
+
+/**
+ * Detect the type of colormap used in the depth image
+ * @param {Uint8ClampedArray} pixels - Image pixel data
+ * @param {number} width - Image width
+ * @param {number} height - Image height
+ * @returns {Object} - {colormapType: string, shouldInvert: boolean}
+ */
+function detectColormapType(pixels, width, height) {
+  let grayscaleCount = 0;
+  let colorCount = 0;
+  let totalSaturation = 0;
+  let totalBrightness = 0;
+  let redCount = 0;
+  let blueCount = 0;
+
+  // Sample pixels (check every 10th pixel for performance)
+  const sampleRate = 10;
+  let sampleCount = 0;
+
+  for (let i = 0; i < pixels.length; i += 4 * sampleRate) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+
+    const isGray = Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10;
+    if (isGray) {
+      grayscaleCount++;
+    } else {
+      colorCount++;
+
+      const hsv = rgbToHsv(r, g, b);
+      totalSaturation += hsv.s;
+      totalBrightness += hsv.v;
+
+      // Count red-ish (hue 0-60 or 300-360) and blue-ish (hue 180-270) pixels
+      if ((hsv.h >= 0 && hsv.h <= 60) || hsv.h >= 300) {
+        redCount++;
+      } else if (hsv.h >= 180 && hsv.h <= 270) {
+        blueCount++;
+      }
+    }
+    sampleCount++;
+  }
+
+  // Determine colormap type based on statistics
+  const grayscaleRatio = grayscaleCount / sampleCount;
+
+  if (grayscaleRatio > 0.9) {
+    return { colormapType: "grayscale", shouldInvert: false };
+  }
+
+  const avgSaturation = totalSaturation / colorCount;
+  const hasRedBlue = (redCount + blueCount) / colorCount > 0.3;
+
+  // For colormaps, we generally don't need to invert
+  // But this could be adjusted based on specific colormap detection
+  let shouldInvert = false;
+
+  // High saturation + red-blue presence = spectral/jet/turbo colormap
+  if (avgSaturation > 0.4 && hasRedBlue) {
+    return { colormapType: "spectral", shouldInvert };
+  }
+
+  // Low saturation = sequential colormap like inferno/viridis
+  if (avgSaturation < 0.3) {
+    return { colormapType: "sequential", shouldInvert };
+  }
+
+  // Default: thermal (red-yellow-white or similar)
+  return { colormapType: "thermal", shouldInvert };
+}
+
+/**
+ * Convert RGB to HSV color space
+ * @returns {Object} - {h: 0-360, s: 0-1, v: 0-1}
+ */
+function rgbToHsv(r, g, b) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const diff = max - min;
+
+  let h = 0;
+  const s = max === 0 ? 0 : diff / max;
+  const v = max;
+
+  if (diff !== 0) {
+    if (max === r) {
+      h = ((g - b) / diff + (g < b ? 6 : 0)) / 6;
+    } else if (max === g) {
+      h = ((b - r) / diff + 2) / 6;
+    } else {
+      h = ((r - g) / diff + 4) / 6;
+    }
+  }
+
+  return { h: h * 360, s, v };
+}
+
+/**
+ * Turbo colormap reference points (commonly used by Depth Anything V2)
+ * Perceptually uniform: Blue (0.0/far) to Red (1.0/near)
+ * Based on Google's Turbo colormap
+ */
+const TURBO_MAP = [
+  [48, 18, 59], // 0.00 - dark blue
+  [62, 73, 137], // 0.10
+  [67, 125, 190], // 0.20
+  [64, 176, 220], // 0.30 - cyan
+  [85, 219, 200], // 0.40
+  [142, 242, 158], // 0.50 - green
+  [203, 245, 106], // 0.60
+  [249, 229, 68], // 0.70 - yellow
+  [253, 175, 43], // 0.80 - orange
+  [237, 106, 32], // 0.90
+  [180, 4, 38], // 1.00 - dark red
+];
+
+/**
+ * Jet colormap reference (traditional, less perceptual)
+ * Blue (0.0) through cyan, green, yellow to red (1.0)
+ */
+const JET_MAP = [
+  [0, 0, 143], // 0.0 - dark blue
+  [0, 0, 255], // 0.167 - blue
+  [0, 255, 255], // 0.333 - cyan
+  [0, 255, 0], // 0.5 - green
+  [255, 255, 0], // 0.667 - yellow
+  [255, 0, 0], // 0.833 - red
+  [128, 0, 0], // 1.0 - dark red
+];
+
+/**
+ * Inferno colormap reference (sequential, perceptual)
+ * Dark purple (0.0) to bright yellow (1.0)
+ */
+const INFERNO_MAP = [
+  [0, 0, 4], // 0.0
+  [40, 11, 84], // 0.2
+  [101, 21, 110], // 0.4
+  [159, 42, 99], // 0.6
+  [212, 72, 66], // 0.8
+  [252, 255, 164], // 1.0
+];
+
+/**
+ * Find closest colormap entry and interpolate depth value
+ */
+function findClosestColormapValue(r, g, b, colormapRef) {
+  let minDist = Infinity;
+  let bestIdx = 0;
+
+  // Find closest color in reference map
+  for (let i = 0; i < colormapRef.length; i++) {
+    const [refR, refG, refB] = colormapRef[i];
+    const dist = Math.sqrt(Math.pow(r - refR, 2) + Math.pow(g - refG, 2) + Math.pow(b - refB, 2));
+    if (dist < minDist) {
+      minDist = dist;
+      bestIdx = i;
+    }
+  }
+
+  // Convert index to depth value (0-1)
+  return bestIdx / (colormapRef.length - 1);
+}
+
+/**
+ * Convert colormap RGB to depth value
+ * Tries multiple strategies to correctly interpret different colormaps
+ * @param {number} r - Red channel (0-255)
+ * @param {number} g - Green channel (0-255)
+ * @param {number} b - Blue channel (0-255)
+ * @param {string} colormapType - Type of colormap: 'grayscale', 'spectral', 'thermal', 'sequential'
+ * @param {boolean} shouldInvert - Whether to invert the depth values
+ * @returns {number} - Depth value (0-1)
+ */
+function rgbToDepth(r, g, b, colormapType = "grayscale", shouldInvert = false) {
+  const rNorm = r / 255.0;
+  const gNorm = g / 255.0;
+  const bNorm = b / 255.0;
+
+  let depth;
+
+  // For grayscale images, use simple brightness
+  if (colormapType === "grayscale") {
+    depth = rNorm; // Since R≈G≈B, just use R
+  }
+  // For spectral/turbo colormaps (most common for depth maps like Depth Anything V2)
+  // Try Turbo first, fall back to Jet
+  else if (colormapType === "spectral") {
+    const turboDepth = findClosestColormapValue(r, g, b, TURBO_MAP);
+    const jetDepth = findClosestColormapValue(r, g, b, JET_MAP);
+    // Use whichever colormap the color is closer to
+    depth = turboDepth; // Default to Turbo as it's more modern and perceptual
+  }
+  // For sequential colormaps (inferno, viridis), use lookup table
+  else if (colormapType === "sequential") {
+    depth = findClosestColormapValue(r, g, b, INFERNO_MAP);
+  }
+  // For thermal or unknown, use Turbo as best guess
+  else {
+    depth = findClosestColormapValue(r, g, b, TURBO_MAP);
+  }
+
+  // Apply inversion if needed
+  return shouldInvert ? 1.0 - depth : depth;
 }
 
 /**

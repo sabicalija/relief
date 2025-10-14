@@ -1,7 +1,16 @@
 <template>
   <div v-if="imageStore.depthMap" class="viewer-wrapper">
     <h2>3D Preview</h2>
-    <div ref="viewerRef" class="viewer"></div>
+    <div class="viewer-container">
+      <div ref="viewerRef" class="viewer"></div>
+      <div v-if="meshResolution" class="mesh-dimensions-badge">
+        {{ meshResolution.width }} × {{ meshResolution.height }} px
+      </div>
+      <div v-if="meshStats" class="mesh-stats-badge">
+        <div class="stat-line">{{ meshStats.vertices.toLocaleString() }} vertices</div>
+        <div class="stat-line">{{ meshStats.memory }}</div>
+      </div>
+    </div>
     <div class="viewer-controls">
       <div class="view-buttons">
         <button @click="setTopView" class="btn btn-view">Top</button>
@@ -44,6 +53,8 @@ const imageStore = useImageStore();
 const viewerRef = ref(null);
 const isPerspective = ref(true);
 const lightIntensity = ref(2.0);
+const meshResolution = ref(null);
+const meshStats = ref(null);
 
 let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, currentMesh;
 let ambientLight, directionalLight1, directionalLight2;
@@ -171,6 +182,44 @@ async function updatePreview() {
     const mesh = await createMeshFromDepthMap(imageStore.depthMap, config);
     currentMesh = mesh;
     scene.add(mesh);
+
+    // Extract mesh resolution from userData
+    if (mesh.userData && mesh.userData.resolution) {
+      meshResolution.value = mesh.userData.resolution;
+    }
+
+    // Calculate mesh statistics (vertex count and memory usage)
+    if (mesh.geometry) {
+      const geometry = mesh.geometry;
+      const vertexCount = geometry.attributes.position ? geometry.attributes.position.count : 0;
+
+      // Calculate memory usage
+      // Position: 3 floats per vertex (12 bytes)
+      // Normal: 3 floats per vertex (12 bytes)
+      // UV: 2 floats per vertex (8 bytes)
+      // Index: 1 uint32 per index (4 bytes)
+      const positionBytes = vertexCount * 3 * 4; // 3 floats * 4 bytes
+      const normalBytes = vertexCount * 3 * 4;
+      const uvBytes = vertexCount * 2 * 4;
+      const indexCount = geometry.index ? geometry.index.count : 0;
+      const indexBytes = indexCount * 4; // uint32
+      const totalBytes = positionBytes + normalBytes + uvBytes + indexBytes;
+
+      // Format memory size
+      let memoryStr;
+      if (totalBytes < 1024) {
+        memoryStr = `${totalBytes} B`;
+      } else if (totalBytes < 1024 * 1024) {
+        memoryStr = `${(totalBytes / 1024).toFixed(1)} KB`;
+      } else {
+        memoryStr = `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      meshStats.value = {
+        vertices: vertexCount,
+        memory: memoryStr,
+      };
+    }
 
     // Center camera on mesh
     const box = new THREE.Box3().setFromObject(mesh);
@@ -425,6 +474,11 @@ function downloadSTL() {
   text-align: left;
 }
 
+.viewer-container {
+  position: relative;
+  width: 100%;
+}
+
 .viewer {
   width: 100%;
   height: 500px;
@@ -432,6 +486,55 @@ function downloadSTL() {
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   flex-grow: 1;
+}
+
+.mesh-dimensions-badge {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: rgba(44, 62, 80, 0.9);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: "Courier New", monospace;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.viewer:hover + .mesh-dimensions-badge {
+  opacity: 0.2;
+}
+
+.mesh-stats-badge {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background-color: rgba(44, 62, 80, 0.9);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: "Courier New", monospace;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  text-align: left;
+}
+
+.stat-line {
+  line-height: 1.5;
+}
+
+.viewer:hover ~ .mesh-stats-badge {
+  opacity: 0.2;
 }
 
 .viewer-controls {
