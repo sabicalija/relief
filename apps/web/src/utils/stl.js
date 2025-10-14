@@ -238,11 +238,13 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   const remainingFaces = faces.length - topFaceCount;
   geometry.addGroup(topFaceCount, remainingFaces, 1);
 
-  // Load texture from depth map image (if enabled)
+  // Load texture (use separate texture if provided, otherwise use depth map)
   let texture = null;
   if (config.showTexture !== false) {
     const textureLoader = new THREE.TextureLoader();
-    texture = textureLoader.load(imageDataUrl);
+    // Use textureMap if provided, otherwise fall back to depth map
+    const textureSource = config.textureMap || imageDataUrl;
+    texture = textureLoader.load(textureSource);
     texture.colorSpace = THREE.SRGBColorSpace;
   }
 

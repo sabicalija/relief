@@ -3,6 +3,8 @@ import { ref } from "vue";
 
 export const useImageStore = defineStore("image", () => {
   const depthMap = ref(null);
+  const textureMap = ref(null); // Optional separate texture for mesh
+  const useCustomTexture = ref(false); // Switch between depth map and custom texture
   const imageDimensions = ref(null); // Store original image dimensions
 
   // Relief config parameters - all in mm for consistency
@@ -20,8 +22,13 @@ export const useImageStore = defineStore("image", () => {
     depthMap.value = imageData;
   }
 
+  function setTextureMap(imageData) {
+    textureMap.value = imageData;
+  }
+
   function clearDepthMap() {
     depthMap.value = null;
+    textureMap.value = null;
     imageDimensions.value = null;
   }
 
@@ -97,8 +104,14 @@ export const useImageStore = defineStore("image", () => {
     simplificationRatio.value = Math.max(0.01, Math.min(1.0, parsed || 1.0));
   }
 
+  function setUseCustomTexture(value) {
+    useCustomTexture.value = value;
+  }
+
   return {
     depthMap,
+    textureMap,
+    useCustomTexture,
     imageDimensions,
     targetDepthMm,
     baseThicknessMm,
@@ -110,6 +123,8 @@ export const useImageStore = defineStore("image", () => {
     showGrid,
     baseColor,
     setDepthMap,
+    setTextureMap,
+    setUseCustomTexture,
     clearDepthMap,
     setImageDimensions,
     setTargetDepthMm,

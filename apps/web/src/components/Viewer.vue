@@ -49,6 +49,17 @@
           <span>Show Grid</span>
         </label>
       </div>
+      <div class="texture-upload">
+        <label for="texture-upload" class="upload-label">Upload Custom Texture</label>
+        <input id="texture-upload" type="file" accept="image/*" @change="handleTextureUpload" class="file-input" />
+        <button v-if="imageStore.textureMap" @click="clearTexture" class="btn btn-clear">Clear</button>
+      </div>
+      <div v-if="imageStore.textureMap" class="texture-source-toggle">
+        <label>
+          <input type="checkbox" v-model="imageStore.useCustomTexture" @change="toggleTextureSource" />
+          <span>Use Custom Texture</span>
+        </label>
+      </div>
       <div class="color-control">
         <label for="base-color">Base Color</label>
         <input
@@ -96,6 +107,8 @@ onUnmounted(() => {
 watch(
   () => [
     imageStore.depthMap,
+    imageStore.textureMap,
+    imageStore.useCustomTexture,
     imageStore.targetDepthMm,
     imageStore.baseThicknessMm,
     imageStore.targetWidthMm,
@@ -221,6 +234,7 @@ async function updatePreview() {
       targetHeightMm: imageStore.targetHeightMm,
       maxResolution: effectiveResolution,
       showTexture: imageStore.showTexture,
+      textureMap: imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : null,
       baseColor: imageStore.baseColor,
     };
 
@@ -504,22 +518,28 @@ function toggleTexture() {
   if (Array.isArray(currentMesh.material)) {
     const topMaterial = currentMesh.material[0]; // Top surface material
 
-    if (imageStore.showTexture && topMaterial.map) {
-      // Texture is already applied, reset color to white so texture shows correctly
-      topMaterial.color.set(0xffffff);
-      topMaterial.map.needsUpdate = true;
-      topMaterial.needsUpdate = true;
-    } else if (imageStore.showTexture && !topMaterial.map) {
-      // Need to load and apply texture
+    if (imageStore.showTexture) {
+      // Dispose old texture if it exists
+      if (topMaterial.map) {
+        topMaterial.map.dispose();
+      }
+
+      // Load and apply texture
       const textureLoader = new THREE.TextureLoader();
-      const texture = textureLoader.load(imageStore.depthMap);
+      // Use custom texture if enabled and available, otherwise use depth map
+      const textureSource =
+        imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : imageStore.depthMap;
+      const texture = textureLoader.load(textureSource);
       texture.colorSpace = THREE.SRGBColorSpace;
       topMaterial.map = texture;
       topMaterial.color.set(0xffffff); // Reset to white for proper texture display
       topMaterial.needsUpdate = true;
     } else {
       // Remove texture and use base color for top surface too
-      topMaterial.map = null;
+      if (topMaterial.map) {
+        topMaterial.map.dispose();
+        topMaterial.map = null;
+      }
       topMaterial.color.set(imageStore.baseColor);
       topMaterial.needsUpdate = true;
     }
@@ -529,6 +549,51 @@ function toggleTexture() {
 function toggleGrid() {
   if (!gridHelper) return;
   gridHelper.visible = imageStore.showGrid;
+}
+
+function handleTextureUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imageStore.setTextureMap(e.target.result);
+      // Automatically enable custom texture when uploaded
+      imageStore.setUseCustomTexture(true);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function clearTexture() {
+  imageStore.setTextureMap(null);
+  imageStore.setUseCustomTexture(false);
+}
+
+function toggleTextureSource() {
+  // When switching texture source, dispose old texture and reload with new source
+  if (!currentMesh) return;
+
+  if (Array.isArray(currentMesh.material)) {
+    const topMaterial = currentMesh.material[0];
+
+    // Dispose old texture if it exists
+    if (topMaterial.map) {
+      topMaterial.map.dispose();
+      topMaterial.map = null;
+    }
+
+    // If texture is enabled, load the new texture source
+    if (imageStore.showTexture) {
+      const textureLoader = new THREE.TextureLoader();
+      const textureSource =
+        imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : imageStore.depthMap;
+      const texture = textureLoader.load(textureSource);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      topMaterial.map = texture;
+      topMaterial.color.set(0xffffff);
+      topMaterial.needsUpdate = true;
+    }
+  }
 }
 
 function updateBaseColor() {
@@ -735,6 +800,69 @@ function downloadSTL() {
 }
 
 .texture-toggle span {
+  user-select: none;
+}
+
+.texture-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.upload-label {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #6c757d;
+  color: white;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.upload-label:hover {
+  background: #5a6268;
+}
+
+.file-input {
+  display: none;
+}
+
+.btn-clear {
+  padding: 0.5rem 1rem;
+  background: #dc2626;
+  font-size: 0.85rem;
+}
+
+.btn-clear:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.texture-source-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.texture-source-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.texture-source-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #42b983;
+}
+
+.texture-source-toggle span {
   user-select: none;
 }
 
