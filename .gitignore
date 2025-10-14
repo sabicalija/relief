@@ -13,3 +13,7 @@ node_modules/
 
 # Docker / builds
 dist/
+
+# Temp
+relief_midas_v3_1_work.py
+test/
