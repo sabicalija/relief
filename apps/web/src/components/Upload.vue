@@ -15,7 +15,7 @@ const handleFileUpload = (event) => {
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      imageStore.setDepthMap(e.target.result);
+      imageStore.setDepthMap(e.target.result, file.name);
     };
     reader.readAsDataURL(file);
   }

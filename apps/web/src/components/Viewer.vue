@@ -633,7 +633,25 @@ function downloadSTL() {
 
   try {
     const blob = exportToSTL(currentMesh);
-    download(blob, "relief.stl");
+
+    // Generate descriptive filename based on depth map name and parameters
+    let filename = "relief.stl";
+
+    if (imageStore.depthMapFilename) {
+      // Remove the file extension from the original filename
+      const baseName = imageStore.depthMapFilename.replace(/\.[^/.]+$/, "");
+
+      // Format parameters
+      const depth = Math.round(imageStore.targetDepthMm);
+      const thickness = Math.round(imageStore.baseThicknessMm);
+      const resolution = imageStore.maxResolution;
+
+      // Build filename: originalname_depth_thickness_resolution.stl
+      // Example: susanne-und-mann_depth_anything_v2_grayscale_20mm_10mm_1024x.stl
+      filename = `${baseName}_${depth}mm_${thickness}mm_${resolution}x.stl`;
+    }
+
+    download(blob, filename);
   } catch (error) {
     console.error("Error exporting STL:", error);
     alert("Failed to export STL file");

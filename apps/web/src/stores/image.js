@@ -6,6 +6,7 @@ export const useImageStore = defineStore("image", () => {
   const textureMap = ref(null); // Optional separate texture for mesh
   const useCustomTexture = ref(false); // Switch between depth map and custom texture
   const imageDimensions = ref(null); // Store original image dimensions
+  const depthMapFilename = ref(null); // Original filename of the depth map
 
   // Relief config parameters - all in mm for consistency
   const targetDepthMm = ref(20.0);
@@ -25,8 +26,11 @@ export const useImageStore = defineStore("image", () => {
   const preserveMajorFeatures = ref(true); // Keep large depth differences intact
   const smoothingKernelSize = ref(3); // Size of smoothing kernel for noise reduction
 
-  function setDepthMap(imageData) {
+  function setDepthMap(imageData, filename = null) {
     depthMap.value = imageData;
+    if (filename) {
+      depthMapFilename.value = filename;
+    }
   }
 
   function setTextureMap(imageData) {
@@ -37,6 +41,7 @@ export const useImageStore = defineStore("image", () => {
     depthMap.value = null;
     textureMap.value = null;
     imageDimensions.value = null;
+    depthMapFilename.value = null;
   }
 
   function setImageDimensions(dimensions) {
@@ -149,6 +154,7 @@ export const useImageStore = defineStore("image", () => {
     textureMap,
     useCustomTexture,
     imageDimensions,
+    depthMapFilename,
     targetDepthMm,
     baseThicknessMm,
     targetWidthMm,
