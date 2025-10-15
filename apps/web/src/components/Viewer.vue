@@ -121,6 +121,8 @@ watch(
     imageStore.detailThreshold,
     imageStore.preserveMajorFeatures,
     imageStore.smoothingKernelSize,
+    imageStore.enableContour,
+    imageStore.contourThreshold,
   ],
   async () => {
     if (imageStore.depthMap) {
@@ -256,6 +258,8 @@ async function updatePreview() {
       detailThreshold: imageStore.detailThreshold,
       preserveMajorFeatures: imageStore.preserveMajorFeatures,
       smoothingKernelSize: imageStore.smoothingKernelSize,
+      enableContour: imageStore.enableContour,
+      contourThreshold: imageStore.contourThreshold,
     };
 
     if (imageStore.simplificationRatio < 1.0) {

@@ -212,6 +212,47 @@
         </div>
       </div>
     </div>
+
+    <div class="advanced-section">
+      <h3 class="section-title">
+        <button @click="toggleContour" class="toggle-btn">
+          <span class="toggle-icon">{{ showContour ? "▼" : "▶" }}</span>
+          Contour Flattening
+        </button>
+      </h3>
+
+      <div v-if="showContour" class="advanced-controls">
+        <div class="control-group">
+          <label>
+            <input type="checkbox" v-model="imageStore.enableContour" class="checkbox-input" />
+            <span>Enable Contour</span>
+          </label>
+          <p class="hint">Flatten all vertices above the threshold to create a flat top surface.</p>
+        </div>
+
+        <div v-if="imageStore.enableContour" class="contour-options">
+          <div class="control-group">
+            <label for="contour-threshold">
+              Threshold
+              <span class="value-display">{{ (imageStore.contourThreshold * 100).toFixed(0) }}%</span>
+            </label>
+            <input
+              id="contour-threshold"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              :value="imageStore.contourThreshold"
+              @input="handleContourThresholdChange"
+              class="slider"
+            />
+            <p class="hint">
+              Depth threshold (0-100%). Vertices above this height will be flattened to the maximum depth.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -226,6 +267,7 @@ const localSimplificationRatio = ref(1.0);
 
 // State for advanced settings toggle
 const showAdvanced = ref(false);
+const showContour = ref(false);
 
 // Initialize from store
 localSimplificationRatio.value = imageStore.simplificationRatio;
@@ -234,6 +276,10 @@ let simplificationDebounceTimer = null;
 
 const toggleAdvanced = () => {
   showAdvanced.value = !showAdvanced.value;
+};
+
+const toggleContour = () => {
+  showContour.value = !showContour.value;
 };
 
 const handleDepthChange = (event) => {
@@ -248,6 +294,10 @@ const handleBaseThicknessChange = (event) => {
 
 const handleEnhancementStrengthChange = (event) => {
   imageStore.setDetailEnhancementStrength(event.target.value);
+};
+
+const handleContourThresholdChange = (event) => {
+  imageStore.setContourThreshold(event.target.value);
 };
 
 const handleDetailThresholdChange = (event) => {

@@ -339,6 +339,25 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     smoothingKernelSize: config.smoothingKernelSize || 3,
   });
 
+  // Apply contour flattening if enabled
+  let finalDepth = enhancedDepth;
+  if (config.enableContour && config.contourThreshold !== undefined) {
+    const threshold = config.contourThreshold; // Already 0-1 range
+    finalDepth = new Float32Array(enhancedDepth.length);
+
+    for (let i = 0; i < enhancedDepth.length; i++) {
+      if (enhancedDepth[i] >= threshold) {
+        // Flatten to maximum (1.0)
+        finalDepth[i] = 1.0;
+      } else {
+        // Keep original value
+        finalDepth[i] = enhancedDepth[i];
+      }
+    }
+
+    console.log(`🔪 Contour flattening applied at ${(threshold * 100).toFixed(0)}% threshold`);
+  }
+
   // 1. Create TOP SURFACE vertices with depth from enhanced depth map
   // Push directly to vertices array to avoid intermediate array and spread operator issues
   for (let i = 0; i <= segmentsY; i++) {
@@ -346,7 +365,7 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
       // Map geometry vertex to depth map pixel
       const imgX = Math.floor((j / segmentsX) * (width - 1));
       const imgY = Math.floor((i / segmentsY) * (height - 1));
-      const depthValue = enhancedDepth[imgY * width + imgX];
+      const depthValue = finalDepth[imgY * width + imgX];
 
       // Position in 3D space
       const x = (j / segmentsX) * meshWidth - meshWidth / 2;

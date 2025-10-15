@@ -26,6 +26,10 @@ export const useImageStore = defineStore("image", () => {
   const preserveMajorFeatures = ref(true); // Keep large depth differences intact
   const smoothingKernelSize = ref(3); // Size of smoothing kernel for noise reduction
 
+  // Contour feature - flatten vertices above threshold
+  const enableContour = ref(false); // Enable contour flattening
+  const contourThreshold = ref(0.8); // Z threshold (0-1) - vertices above this are flattened
+
   function setDepthMap(imageData, filename = null) {
     depthMap.value = imageData;
     if (filename) {
@@ -149,6 +153,15 @@ export const useImageStore = defineStore("image", () => {
     smoothingKernelSize.value = validated;
   }
 
+  function setEnableContour(value) {
+    enableContour.value = value;
+  }
+
+  function setContourThreshold(value) {
+    const parsed = parseFloat(value);
+    contourThreshold.value = Math.max(0.0, Math.min(1.0, parsed || 0.8));
+  }
+
   return {
     depthMap,
     textureMap,
@@ -169,6 +182,8 @@ export const useImageStore = defineStore("image", () => {
     detailThreshold,
     preserveMajorFeatures,
     smoothingKernelSize,
+    enableContour,
+    contourThreshold,
     setDepthMap,
     setTextureMap,
     setUseCustomTexture,
@@ -187,6 +202,9 @@ export const useImageStore = defineStore("image", () => {
     setDetailEnhancementStrength,
     setDetailThreshold,
     setPreserveMajorFeatures,
+    setSmoothingKernelSize,
+    setEnableContour,
+    setContourThreshold,
     setSmoothingKernelSize,
   };
 });
