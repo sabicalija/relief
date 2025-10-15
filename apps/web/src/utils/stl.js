@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { STLExporter } from "three/examples/jsm/exporters/STLExporter.js";
+import UPNG from "upng-js";
+import pako from "pako";
 
 /**
  * Apply adaptive histogram equalization to enhance depth details
@@ -218,6 +220,213 @@ function enhanceDepthDetails(depthMap, width, height, enhanceConfig) {
 }
 
 /**
+ * Try to decode a 16-bit PNG image and extract raw depth values
+ * @param {string} imageDataUrl - Base64 data URL of the PNG image
+ * @returns {Object|null} - { width, height, depthData: Float32Array } or null if not 16-bit PNG
+ */
+function try16BitPNG(imageDataUrl) {
+  try {
+    // Convert data URL to ArrayBuffer
+    const base64Data = imageDataUrl.split(",")[1];
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Parse PNG header manually to extract IDAT chunks
+    const view = new DataView(bytes.buffer);
+
+    // Check PNG signature
+    if (bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4e || bytes[3] !== 0x47) {
+      console.log("ℹ️ Not a PNG file");
+      return null;
+    }
+
+    let offset = 8; // Skip PNG signature
+    let width = 0,
+      height = 0,
+      bitDepth = 0,
+      colorType = 0;
+    const idatChunks = [];
+
+    // Parse PNG chunks
+    while (offset < bytes.length) {
+      const chunkLength = view.getUint32(offset);
+      offset += 4;
+
+      const chunkType = String.fromCharCode(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]);
+      offset += 4;
+
+      if (chunkType === "IHDR") {
+        width = view.getUint32(offset);
+        height = view.getUint32(offset + 4);
+        bitDepth = bytes[offset + 8];
+        colorType = bytes[offset + 9];
+        console.log(`🔍 PNG IHDR: ${width}×${height}, ${bitDepth}-bit, color type ${colorType}`);
+      } else if (chunkType === "IDAT") {
+        // Collect IDAT chunk data
+        const chunkData = bytes.slice(offset, offset + chunkLength);
+        idatChunks.push(chunkData);
+      }
+
+      offset += chunkLength + 4; // Skip chunk data and CRC
+
+      if (chunkType === "IEND") break;
+    }
+
+    // Check if this is 16-bit grayscale
+    if (bitDepth !== 16 || colorType !== 0) {
+      console.log(`ℹ️ Not a 16-bit grayscale PNG (depth=${bitDepth}, type=${colorType})`);
+      return null;
+    }
+
+    console.log("✅ Detected 16-bit grayscale PNG (raw depth data)");
+    console.log(`   Found ${idatChunks.length} IDAT chunks`);
+
+    // Concatenate all IDAT chunks
+    let totalIdatLength = 0;
+    for (const chunk of idatChunks) {
+      totalIdatLength += chunk.length;
+    }
+
+    const compressedData = new Uint8Array(totalIdatLength);
+    let idatOffset = 0;
+    for (const chunk of idatChunks) {
+      compressedData.set(chunk, idatOffset);
+      idatOffset += chunk.length;
+    }
+
+    console.log(`   Compressed IDAT data: ${compressedData.length} bytes`);
+
+    // Decompress using pako
+    const decompressed = pako.inflate(compressedData);
+    console.log(`   Decompressed data: ${decompressed.length} bytes`);
+
+    // PNG scanlines include a filter type byte at the start of each row
+    const bytesPerPixel = 2; // 16-bit = 2 bytes per pixel for grayscale
+    const scanlineLength = 1 + width * bytesPerPixel; // 1 filter byte + pixel data
+    const expectedLength = height * scanlineLength;
+
+    console.log(`   Expected: ${expectedLength} bytes (${height} scanlines × ${scanlineLength} bytes)`);
+
+    if (decompressed.length !== expectedLength) {
+      console.warn(`⚠️  Length mismatch: got ${decompressed.length}, expected ${expectedLength}`);
+    }
+
+    // Reverse PNG filters
+    // PNG uses scanline filtering - each scanline starts with a filter type byte
+    // Filter types: 0=None, 1=Sub, 2=Up, 3=Average, 4=Paeth
+    const unfiltered = new Uint8Array(decompressed.length);
+
+    for (let y = 0; y < height; y++) {
+      const scanlineStart = y * scanlineLength;
+      const filterType = decompressed[scanlineStart];
+      unfiltered[scanlineStart] = filterType; // Copy filter byte
+
+      for (let x = 0; x < width * bytesPerPixel; x++) {
+        const idx = scanlineStart + 1 + x;
+        const raw = decompressed[idx];
+        let predicted = 0;
+
+        switch (filterType) {
+          case 0: // None
+            predicted = 0;
+            break;
+          case 1: // Sub - byte to the left
+            predicted = x >= bytesPerPixel ? unfiltered[idx - bytesPerPixel] : 0;
+            break;
+          case 2: // Up - byte above
+            predicted = y > 0 ? unfiltered[idx - scanlineLength] : 0;
+            break;
+          case 3: // Average
+            const left = x >= bytesPerPixel ? unfiltered[idx - bytesPerPixel] : 0;
+            const above = y > 0 ? unfiltered[idx - scanlineLength] : 0;
+            predicted = Math.floor((left + above) / 2);
+            break;
+          case 4: // Paeth
+            const a = x >= bytesPerPixel ? unfiltered[idx - bytesPerPixel] : 0;
+            const b = y > 0 ? unfiltered[idx - scanlineLength] : 0;
+            const c = x >= bytesPerPixel && y > 0 ? unfiltered[idx - scanlineLength - bytesPerPixel] : 0;
+            const p = a + b - c;
+            const pa = Math.abs(p - a);
+            const pb = Math.abs(p - b);
+            const pc = Math.abs(p - c);
+            if (pa <= pb && pa <= pc) predicted = a;
+            else if (pb <= pc) predicted = b;
+            else predicted = c;
+            break;
+        }
+
+        unfiltered[idx] = (raw + predicted) & 0xff;
+      }
+    }
+
+    console.log(`   Reversed PNG filters`);
+
+    // Extract 16-bit pixel values from unfiltered data
+    const rawData = new Uint16Array(width * height);
+    let pixelIdx = 0;
+
+    for (let y = 0; y < height; y++) {
+      const scanlineStart = y * scanlineLength;
+
+      for (let x = 0; x < width; x++) {
+        const byteOffset = scanlineStart + 1 + x * bytesPerPixel;
+        // PNG stores 16-bit values as big-endian
+        rawData[pixelIdx++] = (unfiltered[byteOffset] << 8) | unfiltered[byteOffset + 1];
+      }
+    }
+
+    // Calculate min/max without spreading (to avoid stack overflow)
+    let minRaw = rawData[0],
+      maxRaw = rawData[0];
+    for (let i = 1; i < rawData.length; i++) {
+      if (rawData[i] < minRaw) minRaw = rawData[i];
+      if (rawData[i] > maxRaw) maxRaw = rawData[i];
+    }
+
+    console.log(`   Sample raw 16-bit values: [0]=${rawData[0]}, [100]=${rawData[100]}, [1000]=${rawData[1000]}`);
+    console.log(`   Raw range: min=${minRaw}, max=${maxRaw} (out of 0-65535)`);
+    console.log(`   Using ${(((maxRaw - minRaw) / 65535) * 100).toFixed(2)}% of available 16-bit range`);
+
+    // Normalize and rescale to use full 0-1 range
+    // This gives better depth detail by stretching the actual data range
+    const depthData = new Float32Array(width * height);
+    const rawRange = maxRaw - minRaw;
+
+    if (rawRange > 0) {
+      // Rescale to use full 0-1 range based on actual data range
+      for (let i = 0; i < width * height; i++) {
+        depthData[i] = (rawData[i] - minRaw) / rawRange;
+      }
+      console.log(`   ✅ Rescaled depth values to use full 0-1 range`);
+    } else {
+      // All values are the same - just normalize
+      for (let i = 0; i < width * height; i++) {
+        depthData[i] = rawData[i] / 65535.0;
+      }
+      console.log(`   ⚠️  All depth values are identical (${minRaw})`);
+    }
+
+    // Calculate min/max of normalized data
+    let minDepth = depthData[0],
+      maxDepth = depthData[0];
+    for (let i = 1; i < depthData.length; i++) {
+      if (depthData[i] < minDepth) minDepth = depthData[i];
+      if (depthData[i] > maxDepth) maxDepth = depthData[i];
+    }
+    console.log(`📊 Final depth range: min=${minDepth.toFixed(4)}, max=${maxDepth.toFixed(4)}`);
+    console.log(`✅ Successfully decoded 16-bit PNG with full precision (65,536 levels)`);
+
+    return { width, height, depthData };
+  } catch (error) {
+    console.error("⚠️ Error decoding 16-bit PNG:", error);
+    return null;
+  }
+}
+
+/**
  * Convert a depth map image to a 3D mesh
  * @param {string} imageDataUrl - Base64 data URL of the depth map image
  * @param {Object} config - Configuration parameters
@@ -233,22 +442,76 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     decimation = 1, // Vertex decimation: 1 = no decimation, 2 = skip every other vertex, etc.
   } = config;
 
-  // Load the depth map image
-  const image = await loadImage(imageDataUrl);
-  let { width, height } = image;
-  const originalWidth = width;
-  const originalHeight = height;
+  // Try to decode as 16-bit PNG first
+  const raw16Bit = try16BitPNG(imageDataUrl);
 
-  // Downsample to maxResolution to avoid memory issues
-  // A 3024×4032 image = 12M vertices = stack overflow!
-  // 1024×1024 = 1M vertices = reasonable and detailed
-  if (maxResolution && (width > maxResolution || height > maxResolution)) {
-    const scale = maxResolution / Math.max(width, height);
-    width = Math.floor(width * scale);
-    height = Math.floor(height * scale);
-    console.log(`📉 Resampling: ${originalWidth}×${originalHeight} → ${width}×${height} pixels (for performance)`);
+  let width, height;
+  let depthValues; // Will hold the raw depth values (0-1 range)
+  let is16Bit = false;
+
+  if (raw16Bit) {
+    // Use 16-bit raw depth data
+    is16Bit = true;
+    width = raw16Bit.width;
+    height = raw16Bit.height;
+    depthValues = raw16Bit.depthData;
+
+    console.log(`📐 16-bit depth map: ${width}×${height} pixels`);
   } else {
-    console.log(`📐 Using full resolution: ${width}×${height} pixels`);
+    // Load the depth map image using standard decoding
+    const image = await loadImage(imageDataUrl);
+    width = image.width;
+    height = image.height;
+
+    const originalWidth = width;
+    const originalHeight = height;
+
+    // Downsample to maxResolution to avoid memory issues
+    if (maxResolution && (width > maxResolution || height > maxResolution)) {
+      const scale = maxResolution / Math.max(width, height);
+      width = Math.floor(width * scale);
+      height = Math.floor(height * scale);
+      console.log(`📉 Resampling: ${originalWidth}×${originalHeight} → ${width}×${height} pixels (for performance)`);
+    } else {
+      console.log(`📐 Using full resolution: ${width}×${height} pixels`);
+    }
+
+    // Create canvas to extract depth data
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0, width, height);
+
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+
+    // Analyze image to detect colormap type and whether to invert
+    const { colormapType, shouldInvert } = detectColormapType(pixels, width, height);
+    console.log("🎨 Detected colormap type:", colormapType, "| Should invert:", shouldInvert);
+
+    // Sample a few pixels to show what we're detecting
+    console.log("📊 Sample depth conversions:");
+    for (let i = 0; i < 5; i++) {
+      const idx = Math.floor(((i / 5) * pixels.length) / 4) * 4;
+      const r = pixels[idx];
+      const g = pixels[idx + 1];
+      const b = pixels[idx + 2];
+      const depth = rgbToDepth(r, g, b, colormapType, shouldInvert);
+      console.log(`  RGB(${r}, ${g}, ${b}) → depth: ${depth.toFixed(3)}`);
+    }
+
+    // Extract depth values from colormap
+    depthValues = new Float32Array(width * height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const r = pixels[idx];
+        const g = pixels[idx + 1];
+        const b = pixels[idx + 2];
+        depthValues[y * width + x] = rgbToDepth(r, g, b, colormapType, shouldInvert);
+      }
+    }
   }
 
   // Calculate dimensions
@@ -275,31 +538,6 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     console.log(`✓ Using defaults: ${meshWidth}×${meshHeight} mm (aspect: ${aspectRatio.toFixed(2)})`);
   }
 
-  // Create canvas to extract depth data
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(image, 0, 0, width, height);
-
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const pixels = imageData.data;
-
-  // Analyze image to detect colormap type and whether to invert
-  const { colormapType, shouldInvert } = detectColormapType(pixels, width, height);
-  console.log("🎨 Detected colormap type:", colormapType, "| Should invert:", shouldInvert);
-
-  // Sample a few pixels to show what we're detecting
-  console.log("📊 Sample depth conversions:");
-  for (let i = 0; i < 5; i++) {
-    const idx = Math.floor(((i / 5) * pixels.length) / 4) * 4;
-    const r = pixels[idx];
-    const g = pixels[idx + 1];
-    const b = pixels[idx + 2];
-    const depth = rgbToDepth(r, g, b, colormapType, shouldInvert);
-    console.log(`  RGB(${r}, ${g}, ${b}) → depth: ${depth.toFixed(3)}`);
-  }
-
   // Create plane geometry - 1:1 pixel to vertex mapping after resampling
   // Use the resampled resolution (already limited by maxResolution above)
   // No further reduction needed - the image is already at a reasonable size
@@ -317,18 +555,6 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   // Arrays to store all vertices and faces
   const vertices = [];
   const faces = [];
-
-  // Extract depth values from image into a Float32Array
-  const depthValues = new Float32Array(width * height);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const pixelIndex = (y * width + x) * 4;
-      const r = pixels[pixelIndex];
-      const g = pixels[pixelIndex + 1];
-      const b = pixels[pixelIndex + 2];
-      depthValues[y * width + x] = rgbToDepth(r, g, b, colormapType, shouldInvert);
-    }
-  }
 
   // Apply depth enhancement if enabled
   const enhancedDepth = enhanceDepthDetails(depthValues, width, height, {
