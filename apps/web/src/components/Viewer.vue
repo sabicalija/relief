@@ -93,6 +93,7 @@ let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, cu
 let ambientLight, directionalLight1, directionalLight2;
 let gridHelper;
 let isInitialized = false;
+let isUpdating = false; // Prevent concurrent updatePreview calls
 
 onUnmounted(() => {
   if (renderer) {
@@ -207,6 +208,14 @@ function animate() {
 }
 
 async function updatePreview() {
+  // Prevent concurrent calls - return if already updating
+  if (isUpdating) {
+    console.log("⏭️ Skipping update - already in progress");
+    return;
+  }
+
+  isUpdating = true;
+
   try {
     // Remove old mesh if exists
     if (currentMesh) {
@@ -223,6 +232,7 @@ async function updatePreview() {
         if (currentMesh.material.map) currentMesh.material.map.dispose();
         currentMesh.material.dispose();
       }
+      currentMesh = null; // Clear reference
     }
 
     // Generate new mesh with decimation applied
@@ -324,6 +334,9 @@ async function updatePreview() {
     controls.update();
   } catch (error) {
     console.error("Error updating preview:", error);
+  } finally {
+    // Always release the lock when done
+    isUpdating = false;
   }
 }
 

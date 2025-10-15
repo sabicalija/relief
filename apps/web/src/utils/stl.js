@@ -255,18 +255,24 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   const aspectRatio = width / height;
   let meshWidth, meshHeight;
 
+  console.log(`📏 Dimension inputs: targetWidthMm=${targetWidthMm}, targetHeightMm=${targetHeightMm}`);
+
   if (targetWidthMm && targetHeightMm) {
     meshWidth = targetWidthMm;
     meshHeight = targetHeightMm;
+    console.log(`✓ Using both width and height: ${meshWidth}×${meshHeight} mm`);
   } else if (targetWidthMm) {
     meshWidth = targetWidthMm;
     meshHeight = targetWidthMm / aspectRatio;
+    console.log(`✓ Using width, calculating height: ${meshWidth}×${meshHeight} mm (aspect: ${aspectRatio.toFixed(2)})`);
   } else if (targetHeightMm) {
     meshHeight = targetHeightMm;
     meshWidth = targetHeightMm * aspectRatio;
+    console.log(`✓ Using height, calculating width: ${meshWidth}×${meshHeight} mm (aspect: ${aspectRatio.toFixed(2)})`);
   } else {
     meshWidth = 100;
     meshHeight = 100 / aspectRatio;
+    console.log(`✓ Using defaults: ${meshWidth}×${meshHeight} mm (aspect: ${aspectRatio.toFixed(2)})`);
   }
 
   // Create canvas to extract depth data
