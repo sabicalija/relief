@@ -1,7 +1,7 @@
 <template>
-  <div v-if="imageStore.depthMap" class="viewer-wrapper">
+  <div class="viewer-wrapper">
     <h2>3D Preview</h2>
-    <div class="viewer-container">
+    <div v-if="imageStore.depthMap" class="viewer-container">
       <div ref="viewerRef" class="viewer"></div>
       <div v-if="meshResolution" class="mesh-dimensions-badge">
         {{ meshResolution.width }} × {{ meshResolution.height }} px
@@ -11,7 +11,12 @@
         <div class="stat-line">{{ meshStats.memory }}</div>
       </div>
     </div>
-    <div class="viewer-controls">
+    <div v-else class="viewer-placeholder">
+      <div class="placeholder-icon">🎨</div>
+      <p>No 3D preview available</p>
+      <p class="placeholder-hint">Load a depth map to see the 3D model</p>
+    </div>
+    <div v-if="imageStore.depthMap" class="viewer-controls">
       <div class="view-buttons">
         <button @click="setTopView" class="btn btn-view">Top</button>
         <button @click="setBottomView" class="btn btn-view">Bottom</button>
@@ -752,6 +757,36 @@ function downloadSTL() {
 
 .viewer:hover ~ .mesh-stats-badge {
   opacity: 0.2;
+}
+
+.viewer-placeholder {
+  width: 100%;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.viewer-placeholder .placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.viewer-placeholder p {
+  margin: 0.5rem 0;
+  color: #6c757d;
+  font-size: 1.125rem;
+}
+
+.viewer-placeholder .placeholder-hint {
+  font-size: 0.875rem !important;
+  color: #adb5bd !important;
 }
 
 .viewer-controls {

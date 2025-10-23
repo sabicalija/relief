@@ -1,5 +1,5 @@
 <template>
-  <div v-if="imageStore.depthMap" class="controls">
+  <div class="controls" :class="{ disabled: !imageStore.depthMap }">
     <h2>STL Parameters</h2>
 
     <div class="control-group">
@@ -423,6 +423,12 @@ const resolutionPresets = computed(() => {
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 1.5rem;
   align-items: start;
+}
+
+.controls.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
 }
 
 .controls h2 {

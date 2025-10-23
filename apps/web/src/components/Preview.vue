@@ -1,8 +1,19 @@
 <template>
-  <div v-if="imageStore.depthMap" class="preview">
+  <div class="preview">
     <h2>Depth Map</h2>
     <div class="image-container">
-      <img ref="imageRef" :src="imageStore.depthMap" alt="Depth map preview" @load="onImageLoad" />
+      <img
+        v-if="imageStore.depthMap"
+        ref="imageRef"
+        :src="imageStore.depthMap"
+        alt="Depth map preview"
+        @load="onImageLoad"
+      />
+      <div v-else class="placeholder">
+        <div class="placeholder-icon">🖼️</div>
+        <p>No depth map loaded</p>
+        <p class="placeholder-hint">Upload a depth map or select a demo below</p>
+      </div>
       <div v-if="imageDimensions" class="dimensions-badge">
         {{ imageDimensions.width }} × {{ imageDimensions.height }} px
       </div>
@@ -76,6 +87,36 @@ function onImageLoad() {
   opacity: 1;
   transition: opacity 0.3s ease;
   pointer-events: none;
+}
+
+.placeholder {
+  width: 100%;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.placeholder p {
+  margin: 0.5rem 0;
+  color: #6c757d;
+  font-size: 1.125rem;
+}
+
+.placeholder-hint {
+  font-size: 0.875rem !important;
+  color: #adb5bd !important;
 }
 
 .image-container:hover .dimensions-badge {
