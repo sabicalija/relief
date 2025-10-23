@@ -7,6 +7,7 @@
       <Preview />
       <Viewer />
     </div>
+    <DemoGallery />
   </div>
 </template>
 
@@ -15,6 +16,7 @@ import Upload from "./components/Upload.vue";
 import Controls from "./components/Controls.vue";
 import Preview from "./components/Preview.vue";
 import Viewer from "./components/Viewer.vue";
+import DemoGallery from "./components/DemoGallery.vue";
 </script>
 
 <style scoped>
