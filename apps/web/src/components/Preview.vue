@@ -1,7 +1,14 @@
 <template>
   <div class="preview">
     <h2>Depth Map</h2>
-    <div class="image-container">
+    <div
+      class="image-container"
+      :class="{ 'drag-over': isDragging }"
+      @dragenter.prevent="handleDragEnter"
+      @dragover.prevent="handleDragOver"
+      @dragleave.prevent="handleDragLeave"
+      @drop.prevent="handleDrop"
+    >
       <img
         v-if="imageStore.depthMap"
         ref="imageRef"
@@ -13,6 +20,7 @@
         <div class="placeholder-icon">🖼️</div>
         <p>No depth map loaded</p>
         <p class="placeholder-hint">Upload a depth map or select a demo below</p>
+        <p class="placeholder-hint">You can also drag & drop an image here</p>
       </div>
       <div v-if="imageDimensions" class="dimensions-badge">
         {{ imageDimensions.width }} × {{ imageDimensions.height }} px
@@ -28,6 +36,7 @@ import { useImageStore } from "../stores/image";
 const imageStore = useImageStore();
 const imageRef = ref(null);
 const imageDimensions = ref(null);
+const isDragging = ref(false);
 
 function onImageLoad() {
   if (imageRef.value) {
@@ -40,6 +49,37 @@ function onImageLoad() {
     imageStore.setImageDimensions(dimensions);
   }
 }
+
+const processFile = (file) => {
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imageStore.setDepthMap(e.target.result, file.name);
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const handleDragEnter = (e) => {
+  isDragging.value = true;
+};
+
+const handleDragOver = (e) => {
+  isDragging.value = true;
+};
+
+const handleDragLeave = (e) => {
+  // Only set to false if we're leaving the container entirely
+  if (e.target.classList.contains("image-container")) {
+    isDragging.value = false;
+  }
+};
+
+const handleDrop = (e) => {
+  isDragging.value = false;
+  const file = e.dataTransfer.files[0];
+  processFile(file);
+};
 </script>
 
 <style scoped>
@@ -60,6 +100,32 @@ function onImageLoad() {
 .image-container {
   position: relative;
   width: 100%;
+  transition: all 0.3s ease;
+}
+
+.image-container.drag-over {
+  transform: scale(1.02);
+  filter: brightness(1.05);
+}
+
+.image-container.drag-over::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 3px solid #42b983;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .preview img {
