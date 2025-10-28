@@ -112,6 +112,36 @@ function gaussianSmooth(depthMap, width, height, kernelSize) {
 }
 
 /**
+ * Apply contour flattening to depth map
+ * @param {Float32Array} depthMap - Input depth map
+ * @param {Object} contourConfig - Contour configuration
+ * @returns {Float32Array} Flattened depth map (or original if disabled)
+ */
+function applyContourFlattening(depthMap, contourConfig) {
+  const { enableContour = false, contourThreshold } = contourConfig;
+
+  if (!enableContour || contourThreshold === undefined) {
+    return depthMap;
+  }
+
+  const flattened = new Float32Array(depthMap.length);
+
+  for (let i = 0; i < depthMap.length; i++) {
+    if (depthMap[i] >= contourThreshold) {
+      // Flatten to maximum (1.0)
+      flattened[i] = 1.0;
+    } else {
+      // Keep original value
+      flattened[i] = depthMap[i];
+    }
+  }
+
+  console.log(`🔪 Contour flattening applied at ${(contourThreshold * 100).toFixed(0)}% threshold`);
+
+  return flattened;
+}
+
+/**
  * Enhance depth details using adaptive histogram equalization
  * @param {Float32Array} depthMap - 2D depth map as 1D array
  * @param {number} width - Width of the depth map
@@ -218,41 +248,13 @@ function enhanceDepthDetails(depthMap, width, height, enhanceConfig) {
 }
 
 /**
- * Convert a depth map image to a 3D mesh
- * @param {string} imageDataUrl - Base64 data URL of the depth map image
- * @param {Object} config - Configuration parameters
- * @returns {Promise<THREE.Mesh>}
+ * Calculate mesh dimensions based on aspect ratio and target dimensions
+ * @param {number} aspectRatio - Width/height ratio
+ * @param {number|null} targetWidthMm - Desired width in mm
+ * @param {number|null} targetHeightMm - Desired height in mm
+ * @returns {Object} { meshWidth, meshHeight } in mm
  */
-export async function createMeshFromDepthMap(imageDataUrl, config) {
-  const {
-    targetDepthMm = 20.0,
-    baseThicknessMm = 10.0,
-    targetWidthMm = null,
-    targetHeightMm = null,
-    maxResolution = 1024, // Reasonable default that balances quality and performance
-    decimation = 1, // Vertex decimation: 1 = no decimation, 2 = skip every other vertex, etc.
-  } = config;
-
-  // Load the depth map image
-  const image = await loadImage(imageDataUrl);
-  let { width, height } = image;
-  const originalWidth = width;
-  const originalHeight = height;
-
-  // Downsample to maxResolution to avoid memory issues
-  // A 3024×4032 image = 12M vertices = stack overflow!
-  // 1024×1024 = 1M vertices = reasonable and detailed
-  if (maxResolution && (width > maxResolution || height > maxResolution)) {
-    const scale = maxResolution / Math.max(width, height);
-    width = Math.floor(width * scale);
-    height = Math.floor(height * scale);
-    console.log(`📉 Resampling: ${originalWidth}×${originalHeight} → ${width}×${height} pixels (for performance)`);
-  } else {
-    console.log(`📐 Using full resolution: ${width}×${height} pixels`);
-  }
-
-  // Calculate dimensions
-  const aspectRatio = width / height;
+function calculateMeshDimensions(aspectRatio, targetWidthMm, targetHeightMm) {
   let meshWidth, meshHeight;
 
   console.log(`📏 Dimension inputs: targetWidthMm=${targetWidthMm}, targetHeightMm=${targetHeightMm}`);
@@ -275,97 +277,153 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     console.log(`✓ Using defaults: ${meshWidth}×${meshHeight} mm (aspect: ${aspectRatio.toFixed(2)})`);
   }
 
-  // Create canvas to extract depth data
+  return { meshWidth, meshHeight };
+}
+
+/**
+ * Calculate target resolution for image resampling
+ * @param {number} width - Original image width
+ * @param {number} height - Original image height
+ * @param {number|null} maxResolution - Maximum resolution limit
+ * @returns {Object} { width, height, originalWidth, originalHeight }
+ */
+function calculateTargetResolution(width, height, maxResolution) {
+  const originalWidth = width;
+  const originalHeight = height;
+
+  // Downsample to maxResolution to avoid memory issues
+  // A 3024×4032 image = 12M vertices = stack overflow!
+  // 1024×1024 = 1M vertices = reasonable and detailed
+  if (maxResolution && (width > maxResolution || height > maxResolution)) {
+    const scale = maxResolution / Math.max(width, height);
+    width = Math.floor(width * scale);
+    height = Math.floor(height * scale);
+    console.log(`📉 Resampling: ${originalWidth}×${originalHeight} → ${width}×${height} pixels (for performance)`);
+  } else {
+    console.log(`📐 Using full resolution: ${width}×${height} pixels`);
+  }
+
+  return { width, height, originalWidth, originalHeight };
+}
+
+/**
+ * Resample image to target dimensions using canvas
+ * @param {HTMLImageElement} image - Source image
+ * @param {number} width - Target width
+ * @param {number} height - Target height
+ * @returns {HTMLCanvasElement} Canvas with resampled image
+ */
+function resampleImage(image, width, height) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(image, 0, 0, width, height);
+  return canvas;
+}
 
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const pixels = imageData.data;
+/**
+ * Extract pixel data from canvas
+ * @param {HTMLCanvasElement} canvas - Source canvas
+ * @returns {Uint8ClampedArray} RGBA pixel data
+ */
+function extractPixelData(canvas) {
+  const ctx = canvas.getContext("2d");
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  return imageData.data;
+}
 
-  // Analyze image to detect colormap type and whether to invert
-  const { colormapType, shouldInvert } = detectColormapType(pixels, width, height);
-  console.log("🎨 Detected colormap type:", colormapType, "| Should invert:", shouldInvert);
+/**
+ * Extract depth values from grayscale depth map
+ * Assumes input is a grayscale image where:
+ * - Black (0) = far/low depth
+ * - White (255) = near/high depth
+ * @param {Uint8ClampedArray} pixels - RGBA pixel data
+ * @param {number} width - Image width
+ * @param {number} height - Image height
+ * @returns {Float32Array} Depth values normalized to (0-1)
+ */
+function extractDepthValues(pixels, width, height) {
+  const depthValues = new Float32Array(width * height);
 
-  // Sample a few pixels to show what we're detecting
-  console.log("📊 Sample depth conversions:");
-  for (let i = 0; i < 5; i++) {
-    const idx = Math.floor(((i / 5) * pixels.length) / 4) * 4;
-    const r = pixels[idx];
-    const g = pixels[idx + 1];
-    const b = pixels[idx + 2];
-    const depth = rgbToDepth(r, g, b, colormapType, shouldInvert);
-    console.log(`  RGB(${r}, ${g}, ${b}) → depth: ${depth.toFixed(3)}`);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const pixelIndex = (y * width + x) * 4;
+      const r = pixels[pixelIndex];
+      // For grayscale images, R = G = B, so we just use the red channel
+      // Normalize to 0-1 range
+      depthValues[y * width + x] = r / 255.0;
+    }
   }
 
-  // Create plane geometry - 1:1 pixel to vertex mapping after resampling
-  // Use the resampled resolution (already limited by maxResolution above)
-  // No further reduction needed - the image is already at a reasonable size
+  return depthValues;
+}
+
+/**
+ * Create materials for mesh rendering
+ * @param {Object} materialConfig - Material configuration
+ * @returns {THREE.Material[]} Array of materials [topMaterial, bottomMaterial]
+ */
+function createMeshMaterials(materialConfig) {
+  const { showTexture = true, textureMap = null, imageDataUrl = null, baseColor = "#808080" } = materialConfig;
+
+  // Load texture if enabled
+  let texture = null;
+  if (showTexture !== false) {
+    const textureLoader = new THREE.TextureLoader();
+    // Use textureMap if provided, otherwise fall back to depth map
+    const textureSource = textureMap || imageDataUrl;
+    texture = textureLoader.load(textureSource);
+    texture.colorSpace = THREE.SRGBColorSpace;
+  }
+
+  // Create materials array
+  const materials = [
+    // Material 0: Top surface with optional texture
+    new THREE.MeshStandardMaterial({
+      map: texture,
+      metalness: 0.3,
+      roughness: 0.7,
+      side: THREE.DoubleSide,
+    }),
+    // Material 1: Bottom and walls with solid color
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color(baseColor),
+      metalness: 0.3,
+      roughness: 0.7,
+      side: THREE.DoubleSide,
+    }),
+  ];
+
+  return materials;
+}
+
+/**
+ * Build 3D mesh geometry from processed depth map
+ * @param {Float32Array} depthMap - Processed depth values (0-1 range)
+ * @param {number} width - Depth map width
+ * @param {number} height - Depth map height
+ * @param {Object} meshParams - Physical mesh parameters
+ * @returns {Object} { geometry, segmentsX, segmentsY } - THREE.BufferGeometry and segment counts
+ */
+function buildMeshGeometry(depthMap, width, height, meshParams) {
+  const { meshWidth, meshHeight, targetDepthMm, baseThicknessMm } = meshParams;
+
+  // Create plane geometry - 1:1 pixel to vertex mapping
   const segmentsX = width - 1;
   const segmentsY = height - 1;
-
-  const totalVertices = (segmentsX + 1) * (segmentsY + 1);
-  const isFullResolution = segmentsX === width - 1 && segmentsY === height - 1;
-  console.log(
-    `🔷 Mesh resolution: ${segmentsX + 1}×${segmentsY + 1} vertices (${totalVertices.toLocaleString()} total)${
-      isFullResolution ? " ✓ FULL RESOLUTION" : " ⚠️ LIMITED"
-    }`
-  );
 
   // Arrays to store all vertices and faces
   const vertices = [];
   const faces = [];
 
-  // Extract depth values from image into a Float32Array
-  const depthValues = new Float32Array(width * height);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const pixelIndex = (y * width + x) * 4;
-      const r = pixels[pixelIndex];
-      const g = pixels[pixelIndex + 1];
-      const b = pixels[pixelIndex + 2];
-      depthValues[y * width + x] = rgbToDepth(r, g, b, colormapType, shouldInvert);
-    }
-  }
-
-  // Apply depth enhancement if enabled
-  const enhancedDepth = enhanceDepthDetails(depthValues, width, height, {
-    enhanceDetails: config.enhanceDetails || false,
-    detailEnhancementStrength: config.detailEnhancementStrength || 1.5,
-    detailThreshold: config.detailThreshold || 0.1,
-    preserveMajorFeatures: config.preserveMajorFeatures !== false,
-    smoothingKernelSize: config.smoothingKernelSize || 3,
-  });
-
-  // Apply contour flattening if enabled
-  let finalDepth = enhancedDepth;
-  if (config.enableContour && config.contourThreshold !== undefined) {
-    const threshold = config.contourThreshold; // Already 0-1 range
-    finalDepth = new Float32Array(enhancedDepth.length);
-
-    for (let i = 0; i < enhancedDepth.length; i++) {
-      if (enhancedDepth[i] >= threshold) {
-        // Flatten to maximum (1.0)
-        finalDepth[i] = 1.0;
-      } else {
-        // Keep original value
-        finalDepth[i] = enhancedDepth[i];
-      }
-    }
-
-    console.log(`🔪 Contour flattening applied at ${(threshold * 100).toFixed(0)}% threshold`);
-  }
-
-  // 1. Create TOP SURFACE vertices with depth from enhanced depth map
-  // Push directly to vertices array to avoid intermediate array and spread operator issues
+  // 1. Create TOP SURFACE vertices with depth from depth map
   for (let i = 0; i <= segmentsY; i++) {
     for (let j = 0; j <= segmentsX; j++) {
       // Map geometry vertex to depth map pixel
       const imgX = Math.floor((j / segmentsX) * (width - 1));
       const imgY = Math.floor((i / segmentsY) * (height - 1));
-      const depthValue = finalDepth[imgY * width + imgX];
+      const depthValue = depthMap[imgY * width + imgX];
 
       // Position in 3D space
       const x = (j / segmentsX) * meshWidth - meshWidth / 2;
@@ -494,34 +552,75 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   const remainingFaces = faces.length - topFaceCount;
   geometry.addGroup(topFaceCount, remainingFaces, 1);
 
-  // Load texture (use separate texture if provided, otherwise use depth map)
-  let texture = null;
-  if (config.showTexture !== false) {
-    const textureLoader = new THREE.TextureLoader();
-    // Use textureMap if provided, otherwise fall back to depth map
-    const textureSource = config.textureMap || imageDataUrl;
-    texture = textureLoader.load(textureSource);
-    texture.colorSpace = THREE.SRGBColorSpace;
-  }
+  return { geometry, segmentsX, segmentsY };
+}
 
-  // Create materials array
-  const baseColor = config.baseColor || "#808080";
-  const materials = [
-    // Material 0: Top surface with optional texture
-    new THREE.MeshStandardMaterial({
-      map: texture, // Apply the depth map as texture (or null)
-      metalness: 0.3,
-      roughness: 0.7,
-      side: THREE.DoubleSide,
-    }),
-    // Material 1: Bottom and walls with solid color
-    new THREE.MeshStandardMaterial({
-      color: new THREE.Color(baseColor),
-      metalness: 0.3,
-      roughness: 0.7,
-      side: THREE.DoubleSide,
-    }),
-  ];
+/**
+ * Convert a depth map image to a 3D mesh
+ * @param {string} imageDataUrl - Base64 data URL of the depth map image
+ * @param {Object} config - Configuration parameters
+ * @returns {Promise<THREE.Mesh>}
+ */
+export async function createMeshFromDepthMap(imageDataUrl, config) {
+  const {
+    targetDepthMm = 20.0,
+    baseThicknessMm = 10.0,
+    targetWidthMm = null,
+    targetHeightMm = null,
+    maxResolution = 1024, // Reasonable default that balances quality and performance
+  } = config;
+
+  // Load the depth map image
+  const image = await loadImage(imageDataUrl);
+
+  // Calculate target resolution for resampling
+  const { width, height, originalWidth, originalHeight } = calculateTargetResolution(
+    image.width,
+    image.height,
+    maxResolution
+  );
+
+  // Calculate mesh dimensions based on aspect ratio and target dimensions
+  const aspectRatio = width / height;
+  const { meshWidth, meshHeight } = calculateMeshDimensions(aspectRatio, targetWidthMm, targetHeightMm);
+
+  // Resample image to target resolution and extract pixel data
+  const canvas = resampleImage(image, width, height);
+  const pixels = extractPixelData(canvas);
+
+  // Extract depth values from grayscale image into a Float32Array
+  const depthValues = extractDepthValues(pixels, width, height);
+
+  // Apply depth enhancement if enabled
+  const enhancedDepth = enhanceDepthDetails(depthValues, width, height, {
+    enhanceDetails: config.enhanceDetails || false,
+    detailEnhancementStrength: config.detailEnhancementStrength || 1.5,
+    detailThreshold: config.detailThreshold || 0.1,
+    preserveMajorFeatures: config.preserveMajorFeatures !== false,
+    smoothingKernelSize: config.smoothingKernelSize || 3,
+  });
+
+  // Apply contour flattening if enabled
+  const finalDepth = applyContourFlattening(enhancedDepth, {
+    enableContour: config.enableContour,
+    contourThreshold: config.contourThreshold,
+  });
+
+  // Build 3D mesh geometry from processed depth map
+  const { geometry, segmentsX, segmentsY } = buildMeshGeometry(finalDepth, width, height, {
+    meshWidth,
+    meshHeight,
+    targetDepthMm,
+    baseThicknessMm,
+  });
+
+  // Create materials for the mesh
+  const materials = createMeshMaterials({
+    showTexture: config.showTexture,
+    textureMap: config.textureMap,
+    imageDataUrl,
+    baseColor: config.baseColor,
+  });
 
   const mesh = new THREE.Mesh(geometry, materials);
 
@@ -529,7 +628,7 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   mesh.userData.resolution = {
     width: segmentsX + 1,
     height: segmentsY + 1,
-    total: totalVertices,
+    total: (segmentsX + 1) * (segmentsY + 1),
   };
 
   // Rotate to lie flat on XZ plane with relief pointing up
@@ -540,6 +639,7 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
 
   return mesh;
 }
+
 /**
  * Export mesh to STL format
  * @param {THREE.Mesh} mesh - The mesh to export
@@ -601,217 +701,6 @@ export function exportToSTL(mesh) {
   cleanGeometry.dispose();
 
   return stlBlob;
-}
-
-/**
- * Detect the type of colormap used in the depth image
- * @param {Uint8ClampedArray} pixels - Image pixel data
- * @param {number} width - Image width
- * @param {number} height - Image height
- * @returns {Object} - {colormapType: string, shouldInvert: boolean}
- */
-function detectColormapType(pixels, width, height) {
-  let grayscaleCount = 0;
-  let colorCount = 0;
-  let totalSaturation = 0;
-  let totalBrightness = 0;
-  let redCount = 0;
-  let blueCount = 0;
-
-  // Sample pixels (check every 10th pixel for performance)
-  const sampleRate = 10;
-  let sampleCount = 0;
-
-  for (let i = 0; i < pixels.length; i += 4 * sampleRate) {
-    const r = pixels[i];
-    const g = pixels[i + 1];
-    const b = pixels[i + 2];
-
-    const isGray = Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10;
-    if (isGray) {
-      grayscaleCount++;
-    } else {
-      colorCount++;
-
-      const hsv = rgbToHsv(r, g, b);
-      totalSaturation += hsv.s;
-      totalBrightness += hsv.v;
-
-      // Count red-ish (hue 0-60 or 300-360) and blue-ish (hue 180-270) pixels
-      if ((hsv.h >= 0 && hsv.h <= 60) || hsv.h >= 300) {
-        redCount++;
-      } else if (hsv.h >= 180 && hsv.h <= 270) {
-        blueCount++;
-      }
-    }
-    sampleCount++;
-  }
-
-  // Determine colormap type based on statistics
-  const grayscaleRatio = grayscaleCount / sampleCount;
-
-  if (grayscaleRatio > 0.9) {
-    return { colormapType: "grayscale", shouldInvert: false };
-  }
-
-  const avgSaturation = totalSaturation / colorCount;
-  const hasRedBlue = (redCount + blueCount) / colorCount > 0.3;
-
-  // For colormaps, we generally don't need to invert
-  // But this could be adjusted based on specific colormap detection
-  let shouldInvert = false;
-
-  // High saturation + red-blue presence = spectral/jet/turbo colormap
-  if (avgSaturation > 0.4 && hasRedBlue) {
-    return { colormapType: "spectral", shouldInvert };
-  }
-
-  // Low saturation = sequential colormap like inferno/viridis
-  if (avgSaturation < 0.3) {
-    return { colormapType: "sequential", shouldInvert };
-  }
-
-  // Default: thermal (red-yellow-white or similar)
-  return { colormapType: "thermal", shouldInvert };
-}
-
-/**
- * Convert RGB to HSV color space
- * @returns {Object} - {h: 0-360, s: 0-1, v: 0-1}
- */
-function rgbToHsv(r, g, b) {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const diff = max - min;
-
-  let h = 0;
-  const s = max === 0 ? 0 : diff / max;
-  const v = max;
-
-  if (diff !== 0) {
-    if (max === r) {
-      h = ((g - b) / diff + (g < b ? 6 : 0)) / 6;
-    } else if (max === g) {
-      h = ((b - r) / diff + 2) / 6;
-    } else {
-      h = ((r - g) / diff + 4) / 6;
-    }
-  }
-
-  return { h: h * 360, s, v };
-}
-
-/**
- * Turbo colormap reference points (commonly used by Depth Anything V2)
- * Perceptually uniform: Blue (0.0/far) to Red (1.0/near)
- * Based on Google's Turbo colormap
- */
-const TURBO_MAP = [
-  [48, 18, 59], // 0.00 - dark blue
-  [62, 73, 137], // 0.10
-  [67, 125, 190], // 0.20
-  [64, 176, 220], // 0.30 - cyan
-  [85, 219, 200], // 0.40
-  [142, 242, 158], // 0.50 - green
-  [203, 245, 106], // 0.60
-  [249, 229, 68], // 0.70 - yellow
-  [253, 175, 43], // 0.80 - orange
-  [237, 106, 32], // 0.90
-  [180, 4, 38], // 1.00 - dark red
-];
-
-/**
- * Jet colormap reference (traditional, less perceptual)
- * Blue (0.0) through cyan, green, yellow to red (1.0)
- */
-const JET_MAP = [
-  [0, 0, 143], // 0.0 - dark blue
-  [0, 0, 255], // 0.167 - blue
-  [0, 255, 255], // 0.333 - cyan
-  [0, 255, 0], // 0.5 - green
-  [255, 255, 0], // 0.667 - yellow
-  [255, 0, 0], // 0.833 - red
-  [128, 0, 0], // 1.0 - dark red
-];
-
-/**
- * Inferno colormap reference (sequential, perceptual)
- * Dark purple (0.0) to bright yellow (1.0)
- */
-const INFERNO_MAP = [
-  [0, 0, 4], // 0.0
-  [40, 11, 84], // 0.2
-  [101, 21, 110], // 0.4
-  [159, 42, 99], // 0.6
-  [212, 72, 66], // 0.8
-  [252, 255, 164], // 1.0
-];
-
-/**
- * Find closest colormap entry and interpolate depth value
- */
-function findClosestColormapValue(r, g, b, colormapRef) {
-  let minDist = Infinity;
-  let bestIdx = 0;
-
-  // Find closest color in reference map
-  for (let i = 0; i < colormapRef.length; i++) {
-    const [refR, refG, refB] = colormapRef[i];
-    const dist = Math.sqrt(Math.pow(r - refR, 2) + Math.pow(g - refG, 2) + Math.pow(b - refB, 2));
-    if (dist < minDist) {
-      minDist = dist;
-      bestIdx = i;
-    }
-  }
-
-  // Convert index to depth value (0-1)
-  return bestIdx / (colormapRef.length - 1);
-}
-
-/**
- * Convert colormap RGB to depth value
- * Tries multiple strategies to correctly interpret different colormaps
- * @param {number} r - Red channel (0-255)
- * @param {number} g - Green channel (0-255)
- * @param {number} b - Blue channel (0-255)
- * @param {string} colormapType - Type of colormap: 'grayscale', 'spectral', 'thermal', 'sequential'
- * @param {boolean} shouldInvert - Whether to invert the depth values
- * @returns {number} - Depth value (0-1)
- */
-function rgbToDepth(r, g, b, colormapType = "grayscale", shouldInvert = false) {
-  const rNorm = r / 255.0;
-  const gNorm = g / 255.0;
-  const bNorm = b / 255.0;
-
-  let depth;
-
-  // For grayscale images, use simple brightness
-  if (colormapType === "grayscale") {
-    depth = rNorm; // Since R≈G≈B, just use R
-  }
-  // For spectral/turbo colormaps (most common for depth maps like Depth Anything V2)
-  // Try Turbo first, fall back to Jet
-  else if (colormapType === "spectral") {
-    const turboDepth = findClosestColormapValue(r, g, b, TURBO_MAP);
-    const jetDepth = findClosestColormapValue(r, g, b, JET_MAP);
-    // Use whichever colormap the color is closer to
-    depth = turboDepth; // Default to Turbo as it's more modern and perceptual
-  }
-  // For sequential colormaps (inferno, viridis), use lookup table
-  else if (colormapType === "sequential") {
-    depth = findClosestColormapValue(r, g, b, INFERNO_MAP);
-  }
-  // For thermal or unknown, use Turbo as best guess
-  else {
-    depth = findClosestColormapValue(r, g, b, TURBO_MAP);
-  }
-
-  // Apply inversion if needed
-  return shouldInvert ? 1.0 - depth : depth;
 }
 
 /**
