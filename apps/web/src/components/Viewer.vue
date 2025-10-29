@@ -1,7 +1,15 @@
 <template>
   <div class="viewer-wrapper">
     <h2>{{ imageStore.viewMode === "2d" ? "Depth Map" : "3D Preview" }}</h2>
-    <div v-if="imageStore.depthMap" class="viewer-container">
+    <div
+      v-if="imageStore.depthMap"
+      class="viewer-container"
+      :class="{ 'drag-over': isDragging }"
+      @dragenter.prevent="handleDragEnter"
+      @dragover.prevent="handleDragOver"
+      @dragleave.prevent="handleDragLeave"
+      @drop.prevent="handleDrop"
+    >
       <!-- 2D Depth Map View -->
       <div v-show="imageStore.viewMode === '2d'" class="depth-map-view">
         <img ref="imageRef" :src="imageStore.depthMap" alt="Depth map preview" @load="onImageLoad" />
@@ -47,10 +55,19 @@
         <div class="stat-line">{{ meshStats.memory }}</div>
       </div>
     </div>
-    <div v-else class="viewer-placeholder">
+    <div
+      v-else
+      class="viewer-placeholder"
+      :class="{ 'drag-over': isDragging }"
+      @dragenter.prevent="handleDragEnter"
+      @dragover.prevent="handleDragOver"
+      @dragleave.prevent="handleDragLeave"
+      @drop.prevent="handleDrop"
+    >
       <div class="placeholder-icon">🎨</div>
       <p>No preview available</p>
       <p class="placeholder-hint">Load a depth map to see the preview</p>
+      <p class="placeholder-hint">You can also drag & drop an image here</p>
     </div>
     <div v-if="imageStore.depthMap && imageStore.viewMode === '3d'" class="viewer-controls">
       <div class="view-buttons">
@@ -134,6 +151,7 @@ const lightIntensity = ref(2.0);
 const meshResolution = ref(null);
 const meshStats = ref(null);
 const isGenerating = ref(false); // Track if mesh generation is in progress
+const isDragging = ref(false); // Track drag & drop state
 
 let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, currentMesh;
 let ambientLight, directionalLight1, directionalLight2;
@@ -818,6 +836,38 @@ function onImageLoad() {
   }
 }
 
+// Drag & drop handlers
+const handleDragEnter = (e) => {
+  isDragging.value = true;
+};
+
+const handleDragOver = (e) => {
+  isDragging.value = true;
+};
+
+const handleDragLeave = (e) => {
+  // Only set to false if we're leaving the container entirely
+  if (e.target.classList.contains("viewer-container") || e.target.classList.contains("viewer-placeholder")) {
+    isDragging.value = false;
+  }
+};
+
+const handleDrop = (e) => {
+  isDragging.value = false;
+  const file = e.dataTransfer.files[0];
+  processFile(file);
+};
+
+const processFile = (file) => {
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imageStore.setDepthMap(e.target.result, file.name);
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
 function downloadSTL() {
   if (!currentMesh) {
     alert("No mesh to export");
@@ -1039,6 +1089,13 @@ function downloadSTL() {
 .viewer-placeholder .placeholder-hint {
   font-size: 0.875rem !important;
   color: #adb5bd !important;
+}
+
+.drag-over {
+  border-color: #0d6efd !important;
+  background: linear-gradient(135deg, #e7f1ff 0%, #cfe2ff 100%) !important;
+  transform: scale(1.01);
+  transition: all 0.2s ease;
 }
 
 .viewer-controls {
