@@ -98,7 +98,8 @@ let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, cu
 let ambientLight, directionalLight1, directionalLight2;
 let gridHelper;
 let isInitialized = false;
-let isUpdating = false; // Prevent concurrent updatePreview calls
+let isUpdating = false; // Track if update is in progress
+let pendingUpdate = false; // Track if another update is needed
 
 onUnmounted(() => {
   if (renderer) {
@@ -215,9 +216,10 @@ function animate() {
 }
 
 async function updatePreview() {
-  // Prevent concurrent calls - return if already updating
+  // If already updating, mark that we need another update and return
   if (isUpdating) {
-    console.log("⏭️ Skipping update - already in progress");
+    pendingUpdate = true;
+    console.log("⏭️ Update in progress - queuing next update");
     return;
   }
 
@@ -344,8 +346,15 @@ async function updatePreview() {
   } catch (error) {
     console.error("Error updating preview:", error);
   } finally {
-    // Always release the lock when done
+    // Release the lock
     isUpdating = false;
+
+    // If another update was requested while we were updating, run it now
+    if (pendingUpdate) {
+      pendingUpdate = false;
+      console.log("🔄 Running queued update");
+      updatePreview();
+    }
   }
 }
 
