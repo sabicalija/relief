@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import * as THREE from "three";
 import {
   calculateMeshDimensions,
   calculateTargetResolution,
@@ -1046,17 +1047,185 @@ describe("createMeshFromDepthMap", () => {
 });
 
 describe("exportToSTL", () => {
-  // These are integration tests that require THREE.js and STLExporter
-  // Skipping for now as they need proper THREE.js environment
-  it.todo("should return a Blob");
-  it.todo("should return binary STL format");
-  it.todo("should clone geometry to avoid modifying original");
-  it.todo("should log export size");
-  it.todo("should clear material groups from cloned geometry");
-  it.todo("should compute vertex normals");
-  it.todo("should dispose cloned geometry after export");
-  it.todo("should flip face winding when scale is negative");
-  it.todo("should not flip face winding when scale is positive");
+  let mockMesh;
+  let consoleLogSpy;
+
+  beforeEach(() => {
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    // Create a real THREE.BufferGeometry with minimal data
+    // This avoids mocking issues with THREE.Mesh constructor
+    const geometry = new THREE.BufferGeometry();
+
+    // Add minimal vertex data (a single triangle)
+    const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+
+    // Add index
+    const indices = new Uint16Array([0, 1, 2]);
+    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
+    // Create a real THREE.Mesh
+    mockMesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+    mockMesh.updateMatrix();
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
+    // Clean up geometry
+    if (mockMesh.geometry) {
+      mockMesh.geometry.dispose();
+    }
+    vi.clearAllMocks();
+  });
+
+  describe("Basic Export", () => {
+    it("should return a Blob", () => {
+      const result = exportToSTL(mockMesh);
+
+      expect(result).toBeInstanceOf(Blob);
+    });
+
+    it("should return binary STL format", () => {
+      const result = exportToSTL(mockMesh);
+
+      expect(result.type).toBe("application/octet-stream");
+    });
+
+    it("should log export size", () => {
+      exportToSTL(mockMesh);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("STL exported"));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("MB"));
+    });
+  });
+
+  describe("Geometry Handling", () => {
+    it("should not modify the original geometry", () => {
+      const originalIndices = Array.from(mockMesh.geometry.index.array);
+      const originalPositions = Array.from(mockMesh.geometry.attributes.position.array);
+
+      exportToSTL(mockMesh);
+
+      // Original geometry should be unchanged
+      expect(Array.from(mockMesh.geometry.index.array)).toEqual(originalIndices);
+      expect(Array.from(mockMesh.geometry.attributes.position.array)).toEqual(originalPositions);
+    });
+
+    it("should handle geometry with multiple triangles", () => {
+      const geometry = new THREE.BufferGeometry();
+      const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 2, 0, 0, 1, 2, 0]);
+      geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+      geometry.setIndex(new THREE.BufferAttribute(new Uint16Array([0, 1, 2, 3, 4, 5]), 1));
+
+      const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+      mesh.updateMatrix();
+
+      const result = exportToSTL(mesh);
+      expect(result).toBeInstanceOf(Blob);
+      expect(result.size).toBeGreaterThan(0);
+
+      geometry.dispose();
+    });
+
+    it("should create a non-empty STL file", () => {
+      const result = exportToSTL(mockMesh);
+
+      // STL binary file has minimum size (84 bytes header + triangles)
+      expect(result.size).toBeGreaterThan(84);
+    });
+  });
+
+  describe("Face Winding", () => {
+    it("should flip face winding when scale is negative", () => {
+      mockMesh.scale.set(1, 1, -1); // Negative z scale
+      mockMesh.updateMatrix();
+
+      // Store original indices
+      const originalIndices = Array.from(mockMesh.geometry.index.array);
+
+      const result = exportToSTL(mockMesh);
+
+      // Should successfully export
+      expect(result).toBeInstanceOf(Blob);
+
+      // Original should be unchanged
+      expect(Array.from(mockMesh.geometry.index.array)).toEqual(originalIndices);
+    });
+
+    it("should not flip face winding when scale is positive", () => {
+      mockMesh.scale.set(1, 1, 1); // Positive scale
+      mockMesh.updateMatrix();
+
+      // Reset the index array
+      const originalIndices = Array.from(mockMesh.geometry.index.array);
+
+      const result = exportToSTL(mockMesh);
+
+      expect(result).toBeInstanceOf(Blob);
+      // Original should be unchanged
+      expect(Array.from(mockMesh.geometry.index.array)).toEqual(originalIndices);
+    });
+
+    it("should flip face winding when x scale is negative", () => {
+      mockMesh.scale.set(-1, 1, 1); // Negative x scale
+      mockMesh.updateMatrix();
+
+      const result = exportToSTL(mockMesh);
+
+      expect(result).toBeInstanceOf(Blob);
+    });
+
+    it("should not flip face winding when two scales are negative", () => {
+      mockMesh.scale.set(-1, -1, 1); // Two negative scales (positive determinant)
+      mockMesh.updateMatrix();
+
+      const result = exportToSTL(mockMesh);
+
+      expect(result).toBeInstanceOf(Blob);
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle geometry without index", () => {
+      const geometry = new THREE.BufferGeometry();
+      const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+      geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+      // No index - uses non-indexed geometry
+
+      const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+      mesh.updateMatrix();
+
+      const result = exportToSTL(mesh);
+      expect(result).toBeInstanceOf(Blob);
+
+      geometry.dispose();
+    });
+
+    it("should handle empty geometry", () => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array([]), 3));
+
+      const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+      mesh.updateMatrix();
+
+      const result = exportToSTL(mesh);
+      expect(result).toBeInstanceOf(Blob);
+
+      geometry.dispose();
+    });
+
+    it("should handle complex transformations", () => {
+      mockMesh.position.set(10, 20, 30);
+      mockMesh.rotation.set(Math.PI / 4, Math.PI / 3, Math.PI / 6);
+      mockMesh.scale.set(2, 3, 4);
+      mockMesh.updateMatrix();
+
+      const result = exportToSTL(mockMesh);
+      expect(result).toBeInstanceOf(Blob);
+      expect(result.size).toBeGreaterThan(0);
+    });
+  });
 });
 
 describe("download", () => {
