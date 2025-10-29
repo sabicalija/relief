@@ -1,29 +1,64 @@
 <template>
   <div class="viewer-wrapper">
-    <h2>3D Preview</h2>
+    <h2>{{ imageStore.viewMode === '2d' ? 'Depth Map' : '3D Preview' }}</h2>
     <div v-if="imageStore.depthMap" class="viewer-container">
-      <div ref="viewerRef" class="viewer"></div>
+      
+      <!-- 2D Depth Map View -->
+      <div v-show="imageStore.viewMode === '2d'" class="depth-map-view">
+        <img
+          ref="imageRef"
+          :src="imageStore.depthMap"
+          alt="Depth map preview"
+          @load="onImageLoad"
+        />
+        <div v-if="imageDimensions" class="dimensions-badge">
+          {{ imageDimensions.width }} × {{ imageDimensions.height }} px
+        </div>
+      </div>
+
+      <!-- 3D STL View -->
+      <div ref="viewerRef" class="viewer" v-show="imageStore.viewMode === '3d'"></div>
+
+      <!-- View Mode Toggle Buttons -->
+      <div class="view-mode-toggle">
+        <button 
+          @click="imageStore.viewMode = '2d'" 
+          class="toggle-btn"
+          :class="{ active: imageStore.viewMode === '2d' }"
+          title="View depth map"
+        >
+          2D
+        </button>
+        <button 
+          @click="imageStore.viewMode = '3d'" 
+          class="toggle-btn"
+          :class="{ active: imageStore.viewMode === '3d' }"
+          title="View 3D model"
+        >
+          3D
+        </button>
+      </div>
 
       <!-- Loading Spinner - Subtle top right corner -->
-      <div v-if="isGenerating" class="loading-indicator">
+      <div v-if="isGenerating && imageStore.viewMode === '3d'" class="loading-indicator">
         <font-awesome-icon icon="spinner" spin />
         <span>Generating...</span>
       </div>
 
-      <div v-if="meshResolution" class="mesh-dimensions-badge">
+      <div v-if="meshResolution && imageStore.viewMode === '3d'" class="mesh-dimensions-badge">
         {{ meshResolution.width }} × {{ meshResolution.height }} px
       </div>
-      <div v-if="meshStats" class="mesh-stats-badge">
+      <div v-if="meshStats && imageStore.viewMode === '3d'" class="mesh-stats-badge">
         <div class="stat-line">{{ meshStats.vertices.toLocaleString() }} vertices</div>
         <div class="stat-line">{{ meshStats.memory }}</div>
       </div>
     </div>
     <div v-else class="viewer-placeholder">
       <div class="placeholder-icon">🎨</div>
-      <p>No 3D preview available</p>
-      <p class="placeholder-hint">Load a depth map to see the 3D model</p>
+      <p>No preview available</p>
+      <p class="placeholder-hint">Load a depth map to see the preview</p>
     </div>
-    <div v-if="imageStore.depthMap" class="viewer-controls">
+    <div v-if="imageStore.depthMap && imageStore.viewMode === '3d'" class="viewer-controls">
       <div class="view-buttons">
         <button @click="setTopView" class="btn btn-view">Top</button>
         <button @click="setBottomView" class="btn btn-view">Bottom</button>
@@ -97,6 +132,8 @@ import { createMeshFromDepthMap, exportToSTL, download } from "../utils/stl";
 
 const imageStore = useImageStore();
 const viewerRef = ref(null);
+const imageRef = ref(null);
+const imageDimensions = ref(null);
 const isPerspective = ref(true);
 const lightIntensity = ref(2.0);
 const meshResolution = ref(null);
@@ -717,6 +754,17 @@ function updateBaseColor() {
   }
 }
 
+function onImageLoad() {
+  if (imageRef.value) {
+    const dimensions = {
+      width: imageRef.value.naturalWidth,
+      height: imageRef.value.naturalHeight,
+    };
+    imageDimensions.value = dimensions;
+    imageStore.setImageDimensions(dimensions);
+  }
+}
+
 function downloadSTL() {
   if (!currentMesh) {
     alert("No mesh to export");
@@ -771,6 +819,24 @@ function downloadSTL() {
   width: 100%;
 }
 
+.depth-map-view {
+  width: 100%;
+  height: 500px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+}
+
+.depth-map-view img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .viewer {
   width: 100%;
   height: 500px;
@@ -778,6 +844,56 @@ function downloadSTL() {
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   flex-grow: 1;
+}
+
+.view-mode-toggle {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  gap: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  padding: 0.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.toggle-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  background-color: transparent;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #374151;
+}
+
+.toggle-btn.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.dimensions-badge {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: rgba(44, 62, 80, 0.9);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: "Courier New", monospace;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
 }
 
 .loading-indicator {

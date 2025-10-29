@@ -8,7 +8,6 @@
     <Upload />
     <Controls />
     <div class="viewer-container">
-      <Preview />
       <Viewer />
     </div>
     <DemoGallery />
@@ -18,7 +17,6 @@
 <script setup>
 import Upload from "./components/Upload.vue";
 import Controls from "./components/Controls.vue";
-import Preview from "./components/Preview.vue";
 import Viewer from "./components/Viewer.vue";
 import DemoGallery from "./components/DemoGallery.vue";
 </script>
@@ -72,18 +70,9 @@ h1 {
   width: 100%;
 }
 
-.viewer-container > * {
-  flex: 1;
-  min-width: 0;
-}
-
 @media (max-width: 1024px) {
   .viewer-container {
     flex-direction: column;
-  }
-
-  .viewer-container > * {
-    width: 100%;
   }
 }
 </style>

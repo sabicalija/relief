@@ -7,6 +7,7 @@ export const useImageStore = defineStore("image", () => {
   const useCustomTexture = ref(false); // Switch between depth map and custom texture
   const imageDimensions = ref(null); // Store original image dimensions
   const depthMapFilename = ref(null); // Original filename of the depth map
+  const viewMode = ref("3d"); // "2d" for depth map, "3d" for STL viewer
 
   // Relief config parameters - all in mm for consistency
   const targetDepthMm = ref(20.0);
@@ -184,6 +185,7 @@ export const useImageStore = defineStore("image", () => {
     smoothingKernelSize,
     enableContour,
     contourThreshold,
+    viewMode,
     setDepthMap,
     setTextureMap,
     setUseCustomTexture,
