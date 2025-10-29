@@ -127,13 +127,7 @@ function applyContourFlattening(depthMap, contourConfig) {
   const flattened = new Float32Array(depthMap.length);
 
   for (let i = 0; i < depthMap.length; i++) {
-    if (depthMap[i] >= contourThreshold) {
-      // Flatten to maximum (1.0)
-      flattened[i] = 1.0;
-    } else {
-      // Keep original value
-      flattened[i] = depthMap[i];
-    }
+    flattened[i] = depthMap[i] >= contourThreshold ? 1.0 : depthMap[i];
   }
 
   console.log(`🔪 Contour flattening applied at ${(contourThreshold * 100).toFixed(0)}% threshold`);
@@ -189,13 +183,8 @@ function enhanceDepthDetails(depthMap, width, height, enhanceConfig) {
     const majorMask = new Float32Array(width * height);
 
     for (let i = 0; i < gradients.length; i++) {
-      if (gradients[i] < detailThreshold) {
-        detailMask[i] = 1;
-        majorMask[i] = 0;
-      } else {
-        detailMask[i] = 0;
-        majorMask[i] = 1;
-      }
+      detailMask[i] = gradients[i] < detailThreshold ? 1 : 0;
+      majorMask[i] = 1 - detailMask[i];
     }
 
     // Extract detail regions
@@ -654,7 +643,7 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   const image = await loadImage(imageDataUrl);
 
   // Calculate target resolution for resampling
-  const { width, height, originalWidth, originalHeight } = calculateTargetResolution(
+  const { width, height } = calculateTargetResolution(
     image.width,
     image.height,
     maxResolution
