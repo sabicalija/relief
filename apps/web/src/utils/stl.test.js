@@ -763,20 +763,286 @@ describe("extractDepthValues", () => {
 });
 
 describe("createMeshFromDepthMap", () => {
-  // These are integration tests that require THREE.js DOM environment
-  // Skipping for now as they need proper browser/jsdom setup
-  it.todo("should create a mesh from depth map data URL");
-  it.todo("should store resolution in mesh userData");
-  it.todo("should apply rotation to mesh");
-  it.todo("should apply scale to mesh");
-  it.todo("should use default values when config is empty");
-  it.todo("should accept custom depth configuration");
-  it.todo("should accept custom dimension configuration");
-  it.todo("should accept maxResolution configuration");
-  it.todo("should accept enhancement configuration");
-  it.todo("should accept contour configuration");
-  it.todo("should accept texture configuration");
-  it.todo("should reject on image load error");
+  let mockCanvas;
+  let mockContext;
+  let mockImageData;
+  let consoleLogSpy;
+
+  beforeEach(() => {
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    // Mock image data - 4x4 grayscale gradient
+    const pixelData = new Uint8ClampedArray(4 * 4 * 4); // RGBA
+    for (let i = 0; i < 4 * 4; i++) {
+      const gray = (i / 15) * 255; // 0 to 255 gradient
+      pixelData[i * 4 + 0] = gray; // R
+      pixelData[i * 4 + 1] = gray; // G
+      pixelData[i * 4 + 2] = gray; // B
+      pixelData[i * 4 + 3] = 255; // A
+    }
+    mockImageData = {
+      data: pixelData,
+      width: 4,
+      height: 4,
+    };
+
+    // Mock canvas context
+    mockContext = {
+      drawImage: vi.fn(),
+      getImageData: vi.fn(() => mockImageData),
+    };
+
+    // Mock canvas
+    mockCanvas = {
+      width: 4,
+      height: 4,
+      getContext: vi.fn(() => mockContext),
+    };
+
+    // Mock document.createElement
+    global.document = {
+      createElement: vi.fn((tag) => {
+        if (tag === "canvas") return mockCanvas;
+        if (tag === "img") {
+          return {
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            src: "",
+          };
+        }
+        return {};
+      }),
+      createElementNS: vi.fn((ns, tag) => {
+        if (tag === "canvas") return mockCanvas;
+        return {};
+      }),
+    };
+
+    // Mock Image constructor
+    global.Image = class {
+      constructor() {
+        this.width = 4;
+        this.height = 4;
+        this.src = "";
+        this.onload = null;
+        this.onerror = null;
+        // Simulate async image loading
+        setTimeout(() => {
+          if (this.onload) {
+            this.onload();
+          }
+        }, 0);
+      }
+    };
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
+    vi.clearAllMocks();
+  });
+
+  describe("Basic Mesh Creation", () => {
+    it("should create a mesh from depth map data URL", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        showTexture: false, // Disable texture to avoid TextureLoader complexity
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      expect(mesh.geometry).toBeDefined();
+      expect(mesh.material).toBeDefined();
+    });
+
+    it("should store resolution in mesh userData", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh.userData.resolution).toBeDefined();
+      expect(mesh.userData.resolution.width).toBeGreaterThan(0);
+      expect(mesh.userData.resolution.height).toBeGreaterThan(0);
+      expect(mesh.userData.resolution.total).toBeGreaterThan(0);
+    });
+
+    it("should apply rotation to mesh", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh.rotation.x).toBe(-Math.PI / 2);
+      expect(mesh.rotation.y).toBe(Math.PI);
+      expect(mesh.rotation.z).toBe(Math.PI);
+    });
+
+    it("should apply negative z-scale to mesh", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh.scale.z).toBe(-1);
+    });
+  });
+
+  describe("Configuration Handling", () => {
+    it("should use default values when config is empty", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      // Should not throw and should create mesh with defaults
+    });
+
+    it("should accept custom depth configuration", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        targetDepthMm: 30.0,
+        baseThicknessMm: 5.0,
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      // Configuration is passed through to buildMeshGeometry
+    });
+
+    it("should accept custom dimension configuration", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        targetWidthMm: 150,
+        targetHeightMm: 100,
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      // Dimensions are passed through to calculateMeshDimensions
+    });
+
+    it("should accept maxResolution configuration", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        maxResolution: 512,
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      // maxResolution is used in calculateTargetResolution
+    });
+
+    it("should accept enhancement configuration", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        enhanceDetails: true,
+        detailEnhancementStrength: 2.0,
+        detailThreshold: 0.15,
+        preserveMajorFeatures: true,
+        smoothingKernelSize: 5,
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      // Enhancement options are passed to enhanceDepthDetails
+    });
+
+    it("should accept contour configuration", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        enableContour: true,
+        contourThreshold: 0.8,
+        showTexture: false,
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      // Contour options are passed to applyContourFlattening
+    });
+
+    it.skip("should accept texture configuration", async () => {
+      // Skipping this test as it requires complex THREE.js TextureLoader mocking
+      // The TextureLoader creates Image elements and adds event listeners which are
+      // difficult to properly mock in a unit test environment.
+      // Integration tests or E2E tests would be more appropriate for texture loading.
+      const dataUrl = "data:image/png;base64,mock";
+      const config = {
+        showTexture: true,
+        textureMap: "depthMap",
+        baseColor: "#42b983",
+      };
+
+      const mesh = await createMeshFromDepthMap(dataUrl, config);
+
+      expect(mesh).toBeDefined();
+      // Texture options are passed to createMeshMaterials
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("should reject on image load error", async () => {
+      // Override Image mock to trigger error
+      global.Image = class {
+        constructor() {
+          this.src = "";
+          this.onload = null;
+          this.onerror = null;
+          setTimeout(() => {
+            if (this.onerror) {
+              this.onerror(new Error("Image load failed"));
+            }
+          }, 0);
+        }
+      };
+
+      const dataUrl = "data:image/png;base64,invalid";
+      const config = {};
+
+      await expect(createMeshFromDepthMap(dataUrl, config)).rejects.toThrow();
+    });
+  });
+
+  describe("Integration with Helper Functions", () => {
+    it("should call resampleImage with calculated dimensions", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = { maxResolution: 2, showTexture: false };
+
+      await createMeshFromDepthMap(dataUrl, config);
+
+      // Should create canvas for resampling
+      expect(document.createElement).toHaveBeenCalledWith("canvas");
+    });
+
+    it("should extract pixel data from canvas", async () => {
+      const dataUrl = "data:image/png;base64,mock";
+      const config = { showTexture: false };
+
+      await createMeshFromDepthMap(dataUrl, config);
+
+      // Should get context and extract image data
+      expect(mockCanvas.getContext).toHaveBeenCalledWith("2d");
+      expect(mockContext.getImageData).toHaveBeenCalled();
+    });
+  });
 });
 
 describe("exportToSTL", () => {
