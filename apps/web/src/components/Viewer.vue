@@ -3,6 +3,13 @@
     <h2>3D Preview</h2>
     <div v-if="imageStore.depthMap" class="viewer-container">
       <div ref="viewerRef" class="viewer"></div>
+
+      <!-- Loading Spinner - Subtle top right corner -->
+      <div v-if="isGenerating" class="loading-indicator">
+        <font-awesome-icon icon="spinner" spin />
+        <span>Generating...</span>
+      </div>
+
       <div v-if="meshResolution" class="mesh-dimensions-badge">
         {{ meshResolution.width }} × {{ meshResolution.height }} px
       </div>
@@ -25,6 +32,7 @@
         <button @click="setLeftView" class="btn btn-view">Left</button>
         <button @click="setRightView" class="btn btn-view">Right</button>
         <button @click="setIsometricView" class="btn btn-view">Isometric</button>
+        <button @click="resetView" class="btn btn-view btn-reset">Reset View</button>
         <button @click="toggleProjection" class="btn btn-view btn-projection">
           {{ isPerspective ? "Perspective" : "Orthographic" }}
         </button>
@@ -93,6 +101,7 @@ const isPerspective = ref(true);
 const lightIntensity = ref(2.0);
 const meshResolution = ref(null);
 const meshStats = ref(null);
+const isGenerating = ref(false); // Track if mesh generation is in progress
 
 let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, currentMesh;
 let ambientLight, directionalLight1, directionalLight2;
@@ -110,10 +119,25 @@ onUnmounted(() => {
   }
 });
 
-// Watch for changes in depth map or parameters (except showTexture)
+// Watch for depth map changes - only these should reposition the camera
+watch(
+  () => imageStore.depthMap,
+  async () => {
+    if (imageStore.depthMap) {
+      if (!isInitialized) {
+        await nextTick();
+        initThreeJS();
+        isInitialized = true;
+      }
+      updatePreview({ repositionCamera: true });
+    }
+  },
+  { immediate: true }
+);
+
+// Watch for all other parameter changes - preserve camera position
 watch(
   () => [
-    imageStore.depthMap,
     imageStore.textureMap,
     imageStore.useCustomTexture,
     imageStore.targetDepthMm,
@@ -131,16 +155,10 @@ watch(
     imageStore.contourThreshold,
   ],
   async () => {
-    if (imageStore.depthMap) {
-      if (!isInitialized) {
-        await nextTick();
-        initThreeJS();
-        isInitialized = true;
-      }
-      updatePreview();
+    if (imageStore.depthMap && isInitialized) {
+      updatePreview({ repositionCamera: false });
     }
-  },
-  { immediate: true }
+  }
 );
 
 function initThreeJS() {
@@ -215,7 +233,9 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-async function updatePreview() {
+async function updatePreview(options = {}) {
+  const { repositionCamera = false } = options;
+
   // If already updating, mark that we need another update and return
   if (isUpdating) {
     pendingUpdate = true;
@@ -224,26 +244,9 @@ async function updatePreview() {
   }
 
   isUpdating = true;
+  isGenerating.value = true; // Show loading spinner
 
   try {
-    // Remove old mesh if exists
-    if (currentMesh) {
-      scene.remove(currentMesh);
-      currentMesh.geometry.dispose();
-
-      // Dispose materials (handle both single material and material array)
-      if (Array.isArray(currentMesh.material)) {
-        currentMesh.material.forEach((material) => {
-          if (material.map) material.map.dispose();
-          material.dispose();
-        });
-      } else {
-        if (currentMesh.material.map) currentMesh.material.map.dispose();
-        currentMesh.material.dispose();
-      }
-      currentMesh = null; // Clear reference
-    }
-
     // Generate new mesh with decimation applied
     // Decimation works by reducing resolution: lower ratio = fewer vertices
     const effectiveResolution = Math.max(
@@ -277,19 +280,43 @@ async function updatePreview() {
       );
     }
 
-    const mesh = await createMeshFromDepthMap(imageStore.depthMap, config);
+    // Generate new mesh in background (old mesh stays visible)
+    const newMesh = await createMeshFromDepthMap(imageStore.depthMap, config);
 
-    currentMesh = mesh;
-    scene.add(mesh);
+    // Calculate new mesh dimensions
+    const box = new THREE.Box3().setFromObject(newMesh);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+
+    // Now remove old mesh (after new one is ready)
+    if (currentMesh) {
+      scene.remove(currentMesh);
+      currentMesh.geometry.dispose();
+
+      // Dispose materials (handle both single material and material array)
+      if (Array.isArray(currentMesh.material)) {
+        currentMesh.material.forEach((material) => {
+          if (material.map) material.map.dispose();
+          material.dispose();
+        });
+      } else {
+        if (currentMesh.material.map) currentMesh.material.map.dispose();
+        currentMesh.material.dispose();
+      }
+    }
+
+    // Add new mesh to scene
+    currentMesh = newMesh;
+    scene.add(newMesh);
 
     // Extract mesh resolution from userData
-    if (mesh.userData && mesh.userData.resolution) {
-      meshResolution.value = mesh.userData.resolution;
+    if (newMesh.userData && newMesh.userData.resolution) {
+      meshResolution.value = newMesh.userData.resolution;
     }
 
     // Calculate mesh statistics (vertex count and memory usage)
-    if (mesh.geometry) {
-      const geometry = mesh.geometry;
+    if (newMesh.geometry) {
+      const geometry = newMesh.geometry;
       const vertexCount = geometry.attributes.position ? geometry.attributes.position.count : 0;
 
       // Calculate memory usage
@@ -320,34 +347,39 @@ async function updatePreview() {
       };
     }
 
-    // Center camera on mesh
-    const box = new THREE.Box3().setFromObject(mesh);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
+    // Only reposition camera when explicitly requested (new depth map loaded)
+    if (repositionCamera) {
+      console.log("📷 Repositioning camera (new depth map loaded)");
+      const maxDim = Math.max(size.x, size.y, size.z);
 
-    const maxDim = Math.max(size.x, size.y, size.z);
+      if (isPerspective.value) {
+        const fov = perspectiveCamera.fov * (Math.PI / 180);
+        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+        cameraZ *= 1.5; // Add some padding
 
-    if (isPerspective.value) {
-      const fov = perspectiveCamera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-      cameraZ *= 1.5; // Add some padding
+        camera.position.set(center.x, center.y + cameraZ / 2, center.z + cameraZ);
+      } else {
+        // For orthographic camera, update frustum and position
+        const distance = maxDim * 1.5;
+        camera.position.set(center.x, center.y + distance / 2, center.z + distance);
+        updateOrthographicFrustum(size, distance);
+      }
 
-      camera.position.set(center.x, center.y + cameraZ / 2, center.z + cameraZ);
+      camera.lookAt(center);
+      controls.target.copy(center);
+      controls.update();
     } else {
-      // For orthographic camera, update frustum and position
-      const distance = maxDim * 1.5;
-      camera.position.set(center.x, center.y + distance / 2, center.z + distance);
-      updateOrthographicFrustum(size, distance);
+      console.log("🔒 Preserving camera position");
+      // Update controls target to new mesh center, but keep camera position
+      controls.target.copy(center);
+      controls.update();
     }
-
-    camera.lookAt(center);
-    controls.target.copy(center);
-    controls.update();
   } catch (error) {
     console.error("Error updating preview:", error);
   } finally {
     // Release the lock
     isUpdating = false;
+    isGenerating.value = false; // Hide loading spinner
 
     // If another update was requested while we were updating, run it now
     if (pendingUpdate) {
@@ -504,6 +536,45 @@ function setIsometricView() {
   controls.update();
 }
 
+function resetView() {
+  if (!currentMesh || !camera || !controls) return;
+
+  console.log("🔄 Resetting view to default position");
+
+  const box = new THREE.Box3().setFromObject(currentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const maxDim = Math.max(size.x, size.y, size.z);
+
+  // Dispose of the old controls to kill all momentum
+  controls.dispose();
+
+  // Reset to the same position as initial load
+  if (isPerspective.value) {
+    const fov = perspectiveCamera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    cameraZ *= 1.5; // Add some padding
+
+    camera.position.set(center.x, center.y + cameraZ / 2, center.z + cameraZ);
+  } else {
+    // For orthographic camera, update frustum and position
+    const distance = maxDim * 1.5;
+    camera.position.set(center.x, center.y + distance / 2, center.z + distance);
+    updateOrthographicFrustum(size, distance);
+  }
+
+  camera.lookAt(center);
+
+  // Recreate controls with fresh state
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.listenToKeyEvents(window);
+  controls.target.copy(center);
+  controls.update();
+}
+
 function toggleProjection() {
   if (!perspectiveCamera || !orthographicCamera || !controls) return;
 
@@ -598,42 +669,32 @@ function handleTextureUpload(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
       imageStore.setTextureMap(e.target.result);
-      // Automatically enable custom texture when uploaded
-      imageStore.setUseCustomTexture(true);
     };
     reader.readAsDataURL(file);
   }
 }
 
-function clearTexture() {
-  imageStore.setTextureMap(null);
-  imageStore.setUseCustomTexture(false);
-}
-
 function toggleTextureSource() {
-  // When switching texture source, dispose old texture and reload with new source
   if (!currentMesh) return;
 
-  if (Array.isArray(currentMesh.material)) {
-    const topMaterial = currentMesh.material[0];
+  const topMaterial = currentMesh.material[0];
 
-    // Dispose old texture if it exists
-    if (topMaterial.map) {
-      topMaterial.map.dispose();
-      topMaterial.map = null;
-    }
+  // Dispose old texture if it exists
+  if (topMaterial.map) {
+    topMaterial.map.dispose();
+    topMaterial.map = null;
+  }
 
-    // If texture is enabled, load the new texture source
-    if (imageStore.showTexture) {
-      const textureLoader = new THREE.TextureLoader();
-      const textureSource =
-        imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : imageStore.depthMap;
-      const texture = textureLoader.load(textureSource);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      topMaterial.map = texture;
-      topMaterial.color.set(0xffffff);
-      topMaterial.needsUpdate = true;
-    }
+  // If texture is enabled, load the new texture source
+  if (imageStore.showTexture) {
+    const textureLoader = new THREE.TextureLoader();
+    const textureSource =
+      imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : imageStore.depthMap;
+    const texture = textureLoader.load(textureSource);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    topMaterial.map = texture;
+    topMaterial.color.set(0xffffff);
+    topMaterial.needsUpdate = true;
   }
 }
 
@@ -717,6 +778,19 @@ function downloadSTL() {
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   flex-grow: 1;
+}
+
+.loading-indicator {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: rgba(0, 0, 0, 0.7);
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+  font-size: 0.875rem;
 }
 
 .mesh-dimensions-badge {
@@ -1012,6 +1086,14 @@ function downloadSTL() {
 
 .btn-view:hover:not(:disabled) {
   background-color: #5a6268;
+}
+
+.btn-reset {
+  background-color: #f59e0b;
+}
+
+.btn-reset:hover:not(:disabled) {
+  background-color: #d97706;
 }
 
 .btn-projection {
