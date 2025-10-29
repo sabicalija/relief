@@ -254,7 +254,7 @@ function enhanceDepthDetails(depthMap, width, height, enhanceConfig) {
  * @param {number|null} targetHeightMm - Desired height in mm
  * @returns {Object} { meshWidth, meshHeight } in mm
  */
-function calculateMeshDimensions(aspectRatio, targetWidthMm, targetHeightMm) {
+export function calculateMeshDimensions(aspectRatio, targetWidthMm, targetHeightMm) {
   let meshWidth, meshHeight;
 
   console.log(`📏 Dimension inputs: targetWidthMm=${targetWidthMm}, targetHeightMm=${targetHeightMm}`);
@@ -287,7 +287,7 @@ function calculateMeshDimensions(aspectRatio, targetWidthMm, targetHeightMm) {
  * @param {number|null} maxResolution - Maximum resolution limit
  * @returns {Object} { width, height, originalWidth, originalHeight }
  */
-function calculateTargetResolution(width, height, maxResolution) {
+export function calculateTargetResolution(width, height, maxResolution) {
   const originalWidth = width;
   const originalHeight = height;
 
@@ -313,7 +313,7 @@ function calculateTargetResolution(width, height, maxResolution) {
  * @param {number} height - Target height
  * @returns {HTMLCanvasElement} Canvas with resampled image
  */
-function resampleImage(image, width, height) {
+export function resampleImage(image, width, height) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -327,7 +327,7 @@ function resampleImage(image, width, height) {
  * @param {HTMLCanvasElement} canvas - Source canvas
  * @returns {Uint8ClampedArray} RGBA pixel data
  */
-function extractPixelData(canvas) {
+export function extractPixelData(canvas) {
   const ctx = canvas.getContext("2d");
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   return imageData.data;
@@ -343,7 +343,7 @@ function extractPixelData(canvas) {
  * @param {number} height - Image height
  * @returns {Float32Array} Depth values normalized to (0-1)
  */
-function extractDepthValues(pixels, width, height) {
+export function extractDepthValues(pixels, width, height) {
   const depthValues = new Float32Array(width * height);
 
   for (let y = 0; y < height; y++) {
@@ -399,81 +399,103 @@ function createMeshMaterials(materialConfig) {
 }
 
 /**
- * Build 3D mesh geometry from processed depth map
- * @param {Float32Array} depthMap - Processed depth values (0-1 range)
+ * Build top surface vertices and faces from depth map
+ * @param {Float32Array} depthMap - Depth values (0-1 range)
  * @param {number} width - Depth map width
  * @param {number} height - Depth map height
  * @param {Object} meshParams - Physical mesh parameters
- * @returns {Object} { geometry, segmentsX, segmentsY } - THREE.BufferGeometry and segment counts
+ * @param {THREE.Vector3[]} vertices - Array to push vertices into
+ * @param {number[]} faces - Array to push face indices into
  */
-function buildMeshGeometry(depthMap, width, height, meshParams) {
-  const { meshWidth, meshHeight, targetDepthMm, baseThicknessMm } = meshParams;
+function buildTopSurface(depthMap, width, height, meshParams, vertices, faces) {
+  const { meshWidth, meshHeight, targetDepthMm } = meshParams;
 
-  // Create plane geometry - 1:1 pixel to vertex mapping
-  const segmentsX = width - 1;
-  const segmentsY = height - 1;
+  // Create TOP SURFACE vertices with depth from depth map
+  // 1:1 mapping: each pixel becomes a vertex
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Get depth value from depth map
+      const depthValue = depthMap[y * width + x];
 
-  // Arrays to store all vertices and faces
-  const vertices = [];
-  const faces = [];
+      // Map pixel coordinates to physical mesh coordinates
+      // Center the mesh at origin
+      const meshX = (x / (width - 1)) * meshWidth - meshWidth / 2;
+      const meshY = (y / (height - 1)) * meshHeight - meshHeight / 2;
+      const meshZ = depthValue * targetDepthMm;
 
-  // 1. Create TOP SURFACE vertices with depth from depth map
-  for (let i = 0; i <= segmentsY; i++) {
-    for (let j = 0; j <= segmentsX; j++) {
-      // Map geometry vertex to depth map pixel
-      const imgX = Math.floor((j / segmentsX) * (width - 1));
-      const imgY = Math.floor((i / segmentsY) * (height - 1));
-      const depthValue = depthMap[imgY * width + imgX];
-
-      // Position in 3D space
-      const x = (j / segmentsX) * meshWidth - meshWidth / 2;
-      const y = (i / segmentsY) * meshHeight - meshHeight / 2;
-      const z = depthValue * targetDepthMm;
-
-      vertices.push(new THREE.Vector3(x, y, z));
+      vertices.push(new THREE.Vector3(meshX, meshY, meshZ));
     }
   }
 
   // Create triangles for top surface
-  for (let i = 0; i < segmentsY; i++) {
-    for (let j = 0; j < segmentsX; j++) {
-      const v1 = i * (segmentsX + 1) + j;
+  // Each quad (4 vertices) is split into 2 triangles
+  for (let y = 0; y < height - 1; y++) {
+    for (let x = 0; x < width - 1; x++) {
+      // Vertex indices for current quad
+      const v1 = y * width + x;
       const v2 = v1 + 1;
-      const v3 = v1 + (segmentsX + 1);
+      const v3 = v1 + width;
       const v4 = v3 + 1;
 
+      // Triangle 1: v1 -> v2 -> v3
       faces.push(v1, v2, v3);
+      // Triangle 2: v2 -> v4 -> v3
       faces.push(v2, v4, v3);
     }
   }
+}
 
-  // 2. Create BOTTOM SURFACE vertices (flat base)
+/**
+ * Build bottom surface vertices and faces (flat base)
+ * @param {number} width - Depth map width
+ * @param {number} height - Depth map height
+ * @param {Object} meshParams - Physical mesh parameters
+ * @param {THREE.Vector3[]} vertices - Array to push vertices into
+ * @param {number[]} faces - Array to push face indices into
+ * @returns {number} Starting index of bottom vertices
+ */
+function buildBottomSurface(width, height, meshParams, vertices, faces) {
+  const { meshWidth, meshHeight, baseThicknessMm } = meshParams;
+
+  // Create BOTTOM SURFACE vertices (flat base)
   const bottomStartIdx = vertices.length;
-  for (let i = 0; i <= segmentsY; i++) {
-    for (let j = 0; j <= segmentsX; j++) {
-      const x = (j / segmentsX) * meshWidth - meshWidth / 2;
-      const y = (i / segmentsY) * meshHeight - meshHeight / 2;
-      const z = -baseThicknessMm;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Map pixel coordinates to physical mesh coordinates
+      const meshX = (x / (width - 1)) * meshWidth - meshWidth / 2;
+      const meshY = (y / (height - 1)) * meshHeight - meshHeight / 2;
+      const meshZ = -baseThicknessMm;
 
-      vertices.push(new THREE.Vector3(x, y, z));
+      vertices.push(new THREE.Vector3(meshX, meshY, meshZ));
     }
   }
 
   // Create triangles for bottom surface (reversed winding for correct normals)
-  for (let i = 0; i < segmentsY; i++) {
-    for (let j = 0; j < segmentsX; j++) {
-      const v1 = bottomStartIdx + i * (segmentsX + 1) + j;
+  for (let y = 0; y < height - 1; y++) {
+    for (let x = 0; x < width - 1; x++) {
+      // Vertex indices for current quad
+      const v1 = bottomStartIdx + y * width + x;
       const v2 = v1 + 1;
-      const v3 = v1 + (segmentsX + 1);
+      const v3 = v1 + width;
       const v4 = v3 + 1;
 
-      faces.push(v1, v3, v2); // Reversed winding
-      faces.push(v2, v3, v4); // Reversed winding
+      // Reversed winding for bottom face
+      faces.push(v1, v3, v2);
+      faces.push(v2, v3, v4);
     }
   }
 
-  // 3. Create PERIMETER WALLS connecting top and bottom edges
+  return bottomStartIdx;
+}
 
+/**
+ * Build perimeter walls connecting top and bottom surfaces
+ * @param {number} width - Depth map width
+ * @param {number} height - Depth map height
+ * @param {number} bottomStartIdx - Starting index of bottom vertices
+ * @param {number[]} faces - Array to push face indices into
+ */
+function buildPerimeterWalls(width, height, bottomStartIdx, faces) {
   // Helper function to add wall quad with correct outward-facing normals
   const addWallQuad = (topIdx1, topIdx2, bottomIdx1, bottomIdx2) => {
     // Counter-clockwise winding for outward-facing normals
@@ -482,40 +504,67 @@ function buildMeshGeometry(depthMap, width, height, meshParams) {
   };
 
   // Bottom edge (y = 0)
-  for (let j = 0; j < segmentsX; j++) {
-    const topIdx1 = j;
-    const topIdx2 = j + 1;
-    const bottomIdx1 = bottomStartIdx + j;
-    const bottomIdx2 = bottomStartIdx + j + 1;
+  for (let x = 0; x < width - 1; x++) {
+    const topIdx1 = x;
+    const topIdx2 = x + 1;
+    const bottomIdx1 = bottomStartIdx + x;
+    const bottomIdx2 = bottomStartIdx + x + 1;
     addWallQuad(topIdx1, topIdx2, bottomIdx1, bottomIdx2);
   }
 
-  // Right edge (x = segmentsX)
-  for (let i = 0; i < segmentsY; i++) {
-    const topIdx1 = i * (segmentsX + 1) + segmentsX;
-    const topIdx2 = (i + 1) * (segmentsX + 1) + segmentsX;
-    const bottomIdx1 = bottomStartIdx + i * (segmentsX + 1) + segmentsX;
-    const bottomIdx2 = bottomStartIdx + (i + 1) * (segmentsX + 1) + segmentsX;
+  // Right edge (x = width - 1)
+  for (let y = 0; y < height - 1; y++) {
+    const topIdx1 = y * width + (width - 1);
+    const topIdx2 = (y + 1) * width + (width - 1);
+    const bottomIdx1 = bottomStartIdx + y * width + (width - 1);
+    const bottomIdx2 = bottomStartIdx + (y + 1) * width + (width - 1);
     addWallQuad(topIdx1, topIdx2, bottomIdx1, bottomIdx2);
   }
 
-  // Top edge (y = segmentsY)
-  for (let j = segmentsX; j > 0; j--) {
-    const topIdx1 = segmentsY * (segmentsX + 1) + j;
-    const topIdx2 = segmentsY * (segmentsX + 1) + j - 1;
-    const bottomIdx1 = bottomStartIdx + segmentsY * (segmentsX + 1) + j;
-    const bottomIdx2 = bottomStartIdx + segmentsY * (segmentsX + 1) + j - 1;
+  // Top edge (y = height - 1)
+  for (let x = width - 1; x > 0; x--) {
+    const topIdx1 = (height - 1) * width + x;
+    const topIdx2 = (height - 1) * width + x - 1;
+    const bottomIdx1 = bottomStartIdx + (height - 1) * width + x;
+    const bottomIdx2 = bottomStartIdx + (height - 1) * width + x - 1;
     addWallQuad(topIdx1, topIdx2, bottomIdx1, bottomIdx2);
   }
 
   // Left edge (x = 0)
-  for (let i = segmentsY; i > 0; i--) {
-    const topIdx1 = i * (segmentsX + 1);
-    const topIdx2 = (i - 1) * (segmentsX + 1);
-    const bottomIdx1 = bottomStartIdx + i * (segmentsX + 1);
-    const bottomIdx2 = bottomStartIdx + (i - 1) * (segmentsX + 1);
+  for (let y = height - 1; y > 0; y--) {
+    const topIdx1 = y * width;
+    const topIdx2 = (y - 1) * width;
+    const bottomIdx1 = bottomStartIdx + y * width;
+    const bottomIdx2 = bottomStartIdx + (y - 1) * width;
     addWallQuad(topIdx1, topIdx2, bottomIdx1, bottomIdx2);
   }
+}
+
+/**
+ * Build 3D mesh geometry from processed depth map
+ * @param {Float32Array} depthMap - Processed depth values (0-1 range)
+ * @param {number} width - Depth map width
+ * @param {number} height - Depth map height
+ * @param {Object} meshParams - Physical mesh parameters
+ * @returns {Object} { geometry, segmentsX, segmentsY } - THREE.BufferGeometry and segment counts
+ */
+function buildMeshGeometry(depthMap, width, height, meshParams) {
+  // Create plane geometry - 1:1 pixel to vertex mapping
+  const segmentsX = width - 1;
+  const segmentsY = height - 1;
+
+  // Arrays to store all vertices and faces
+  const vertices = [];
+  const faces = [];
+
+  // 1. Build TOP SURFACE
+  buildTopSurface(depthMap, width, height, meshParams, vertices, faces);
+
+  // 2. Build BOTTOM SURFACE
+  const bottomStartIdx = buildBottomSurface(width, height, meshParams, vertices, faces);
+
+  // 3. Build PERIMETER WALLS
+  buildPerimeterWalls(width, height, bottomStartIdx, faces);
 
   // Create BufferGeometry
   const geometry = new THREE.BufferGeometry();
