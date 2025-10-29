@@ -8,7 +8,7 @@
     <Upload />
     <Controls />
     <div class="viewer-container">
-      <Viewer />
+      <TresViewer />
     </div>
     <DemoGallery />
   </div>
@@ -17,7 +17,7 @@
 <script setup>
 import Upload from "./components/Upload.vue";
 import Controls from "./components/Controls.vue";
-import Viewer from "./components/Viewer.vue";
+import TresViewer from "./components/TresViewer.vue";
 import DemoGallery from "./components/DemoGallery.vue";
 </script>
 
@@ -68,6 +68,7 @@ h1 {
   margin-left: auto;
   margin-right: auto;
   width: 100%;
+  min-height: 600px;
 }
 
 @media (max-width: 1024px) {
