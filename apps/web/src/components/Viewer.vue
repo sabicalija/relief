@@ -1,16 +1,10 @@
 <template>
   <div class="viewer-wrapper">
-    <h2>{{ imageStore.viewMode === '2d' ? 'Depth Map' : '3D Preview' }}</h2>
+    <h2>{{ imageStore.viewMode === "2d" ? "Depth Map" : "3D Preview" }}</h2>
     <div v-if="imageStore.depthMap" class="viewer-container">
-      
       <!-- 2D Depth Map View -->
       <div v-show="imageStore.viewMode === '2d'" class="depth-map-view">
-        <img
-          ref="imageRef"
-          :src="imageStore.depthMap"
-          alt="Depth map preview"
-          @load="onImageLoad"
-        />
+        <img ref="imageRef" :src="imageStore.depthMap" alt="Depth map preview" @load="onImageLoad" />
         <div v-if="imageDimensions" class="dimensions-badge">
           {{ imageDimensions.width }} × {{ imageDimensions.height }} px
         </div>
@@ -21,16 +15,16 @@
 
       <!-- View Mode Toggle Buttons -->
       <div class="view-mode-toggle">
-        <button 
-          @click="imageStore.viewMode = '2d'" 
+        <button
+          @click="imageStore.viewMode = '2d'"
           class="toggle-btn"
           :class="{ active: imageStore.viewMode === '2d' }"
           title="View depth map"
         >
           2D
         </button>
-        <button 
-          @click="imageStore.viewMode = '3d'" 
+        <button
+          @click="imageStore.viewMode = '3d'"
           class="toggle-btn"
           :class="{ active: imageStore.viewMode === '3d' }"
           title="View 3D model"
@@ -128,6 +122,7 @@ import { ref, onUnmounted, watch, nextTick } from "vue";
 import { useImageStore } from "../stores/image";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { ViewportGizmo } from "three-viewport-gizmo";
 import { createMeshFromDepthMap, exportToSTL, download } from "../utils/stl";
 
 const imageStore = useImageStore();
@@ -143,16 +138,22 @@ const isGenerating = ref(false); // Track if mesh generation is in progress
 let scene, camera, perspectiveCamera, orthographicCamera, renderer, controls, currentMesh;
 let ambientLight, directionalLight1, directionalLight2;
 let gridHelper;
+let viewportGizmo;
 let isInitialized = false;
 let isUpdating = false; // Track if update is in progress
 let pendingUpdate = false; // Track if another update is needed
 
 onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
+
   if (renderer) {
     renderer.dispose();
   }
   if (controls) {
     controls.dispose();
+  }
+  if (viewportGizmo) {
+    viewportGizmo.dispose();
   }
 });
 
@@ -260,14 +261,61 @@ function initThreeJS() {
   gridHelper.visible = imageStore.showGrid;
   scene.add(gridHelper);
 
+  // Viewport Gizmo (orientation cube)
+  console.log("Creating ViewportGizmo...", camera, renderer, viewerRef.value);
+  viewportGizmo = new ViewportGizmo(camera, renderer, {
+    container: viewerRef.value,
+    size: 128,
+    placement: "top-right",
+  });
+  console.log("ViewportGizmo created:", viewportGizmo);
+  viewportGizmo.attachControls(controls);
+  console.log("Controls attached to gizmo");
+
+  // Handle window resize
+  window.addEventListener("resize", handleResize);
+
   // Animation loop
   animate();
+}
+
+function handleResize() {
+  if (!viewerRef.value || !renderer || !camera) return;
+
+  const width = viewerRef.value.clientWidth;
+  const height = viewerRef.value.clientHeight;
+
+  renderer.setSize(width, height);
+
+  if (isPerspective.value && perspectiveCamera) {
+    perspectiveCamera.aspect = width / height;
+    perspectiveCamera.updateProjectionMatrix();
+  } else if (!isPerspective.value && orthographicCamera) {
+    const aspect = width / height;
+    const frustumSize = 200;
+    orthographicCamera.left = (frustumSize * aspect) / -2;
+    orthographicCamera.right = (frustumSize * aspect) / 2;
+    orthographicCamera.top = frustumSize / 2;
+    orthographicCamera.bottom = frustumSize / -2;
+    orthographicCamera.updateProjectionMatrix();
+  }
+
+  if (viewportGizmo) {
+    viewportGizmo.update();
+  }
 }
 
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+
+  // Render main scene
   renderer.render(scene, camera);
+
+  // Render viewport gizmo after main scene
+  if (viewportGizmo) {
+    viewportGizmo.render();
+  }
 }
 
 async function updatePreview(options = {}) {
@@ -632,6 +680,11 @@ function toggleProjection() {
   controls.object = camera;
   controls.target.copy(target);
   controls.update();
+
+  // Update viewport gizmo to track new camera
+  if (viewportGizmo) {
+    viewportGizmo.camera = camera;
+  }
 
   // If switching to orthographic, adjust zoom to match view
   if (!isPerspective.value && currentMesh) {

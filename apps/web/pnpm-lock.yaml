@@ -26,6 +26,9 @@ importers:
       three:
         specifier: ^0.180.0
         version: 0.180.0
+      three-viewport-gizmo:
+        specifier: ^2.2.0
+        version: 2.2.0(three@0.180.0)
       vue:
         specifier: ^3.4.0
         version: 3.5.22
@@ -939,6 +942,11 @@ packages:
   superjson@2.2.2:
     resolution: {integrity: sha512-5JRxVqC8I8NuOUjzBbvVJAKNM8qoVuH0O77h4WInc/qC2q5IreqKxYwgkga3PfA22OayK2ikceb/B26dztPl+Q==}
     engines: {node: '>=16'}
+
+  three-viewport-gizmo@2.2.0:
+    resolution: {integrity: sha512-Jo9Liur1rUmdKk75FZumLU/+hbF+RtJHi1qsKZpntjKlCYScK6tjbYoqvJ9M+IJphrlQJF5oReFW7Sambh0N4Q==}
+    peerDependencies:
+      three: '>=0.162.0 <1.0.0'
 
   three@0.180.0:
     resolution: {integrity: sha512-o+qycAMZrh+TsE01GqWUxUIKR1AL0S8pq7zDkYOQw8GqfX8b8VoCKYUoHbhiX5j+7hr8XsuHDVU6+gkQJQKg9w==}
@@ -1854,6 +1862,10 @@ snapshots:
   superjson@2.2.2:
     dependencies:
       copy-anything: 3.0.5
+
+  three-viewport-gizmo@2.2.0(three@0.180.0):
+    dependencies:
+      three: 0.180.0
 
   three@0.180.0: {}
 
