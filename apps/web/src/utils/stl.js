@@ -643,11 +643,7 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
   const image = await loadImage(imageDataUrl);
 
   // Calculate target resolution for resampling
-  const { width, height } = calculateTargetResolution(
-    image.width,
-    image.height,
-    maxResolution
-  );
+  const { width, height } = calculateTargetResolution(image.width, image.height, maxResolution);
 
   // Calculate mesh dimensions based on aspect ratio and target dimensions
   const aspectRatio = width / height;
