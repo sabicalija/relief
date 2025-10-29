@@ -111,9 +111,11 @@
       <div class="texture-upload">
         <label for="texture-upload" class="upload-label">Upload Custom Texture</label>
         <input id="texture-upload" type="file" accept="image/*" @change="handleTextureUpload" class="file-input" />
-        <button v-if="imageStore.textureMap" @click="clearTexture" class="btn btn-clear">Clear</button>
+        <button v-if="imageStore.textureMap" @click="clearAllTextures" class="btn btn-clear">
+          {{ imageStore.useCustomTexture ? "Clear Custom" : "Clear Texture" }}
+        </button>
       </div>
-      <div v-if="imageStore.textureMap" class="texture-source-toggle">
+      <div v-if="imageStore.textureMap && imageStore.useCustomTexture" class="texture-source-toggle">
         <label>
           <input type="checkbox" v-model="imageStore.useCustomTexture" @change="toggleTextureSource" />
           <span>Use Custom Texture</span>
@@ -732,11 +734,13 @@ function updateLightIntensity() {
 }
 
 function toggleTexture() {
+  console.log("toggleTexture called, showTexture:", imageStore.showTexture, "currentMesh:", currentMesh);
   if (!currentMesh) return;
 
   // Handle multi-material mesh
   if (Array.isArray(currentMesh.material)) {
     const topMaterial = currentMesh.material[0]; // Top surface material
+    console.log("Top material before:", { hasMap: !!topMaterial.map, color: topMaterial.color.getHexString() });
 
     if (imageStore.showTexture) {
       // Dispose old texture if it exists
@@ -749,6 +753,7 @@ function toggleTexture() {
       // Use custom texture if enabled and available, otherwise use depth map
       const textureSource =
         imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : imageStore.depthMap;
+      console.log("Loading texture from:", textureSource ? "custom or depth map" : "none");
       const texture = textureLoader.load(textureSource);
       texture.colorSpace = THREE.SRGBColorSpace;
       topMaterial.map = texture;
@@ -756,6 +761,7 @@ function toggleTexture() {
       topMaterial.needsUpdate = true;
     } else {
       // Remove texture and use base color for top surface too
+      console.log("Removing texture, applying base color:", imageStore.baseColor);
       if (topMaterial.map) {
         topMaterial.map.dispose();
         topMaterial.map = null;
@@ -763,6 +769,7 @@ function toggleTexture() {
       topMaterial.color.set(imageStore.baseColor);
       topMaterial.needsUpdate = true;
     }
+    console.log("Top material after:", { hasMap: !!topMaterial.map, color: topMaterial.color.getHexString() });
   }
 }
 
@@ -777,9 +784,23 @@ function handleTextureUpload(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
       imageStore.setTextureMap(e.target.result);
+      imageStore.useCustomTexture = true; // Enable custom texture automatically
+      imageStore.showTexture = true; // Re-enable texture display
+      toggleTextureSource(); // Apply the texture to the mesh
     };
     reader.readAsDataURL(file);
   }
+}
+
+function clearAllTextures() {
+  imageStore.clearTextureMap();
+  // Reset the file input
+  const textureInput = document.getElementById("texture-upload");
+  if (textureInput) {
+    textureInput.value = "";
+  }
+  // Disable texture display entirely
+  imageStore.showTexture = false;
 }
 
 function toggleTextureSource() {
