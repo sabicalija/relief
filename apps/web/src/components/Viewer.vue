@@ -13,46 +13,68 @@
       <!-- 2D Depth Map View -->
       <div v-show="imageStore.viewMode === '2d'" class="depth-map-view">
         <img ref="imageRef" :src="imageStore.depthMap" alt="Depth map preview" @load="onImageLoad" />
-        <div v-if="imageDimensions" class="dimensions-badge">
-          {{ imageDimensions.width }} × {{ imageDimensions.height }} px
-        </div>
       </div>
 
       <!-- 3D STL View -->
       <div ref="viewerRef" class="viewer" v-show="imageStore.viewMode === '3d'"></div>
 
-      <!-- View Mode Toggle Buttons -->
-      <div class="view-mode-toggle">
-        <button
-          @click="imageStore.viewMode = '2d'"
-          class="toggle-btn"
-          :class="{ active: imageStore.viewMode === '2d' }"
-          title="View depth map"
-        >
-          2D
-        </button>
-        <button
-          @click="imageStore.viewMode = '3d'"
-          class="toggle-btn"
-          :class="{ active: imageStore.viewMode === '3d' }"
-          title="View 3D model"
-        >
-          3D
-        </button>
+      <!-- Top Overlay Bar: View Mode Toggle (left) + Status (right) -->
+      <div class="overlay-bar overlay-bar-top">
+        <div class="overlay-bar-left">
+          <!-- View Mode Toggle Buttons -->
+          <div class="view-mode-toggle">
+            <button
+              @click="imageStore.viewMode = '2d'"
+              class="toggle-btn"
+              :class="{ active: imageStore.viewMode === '2d' }"
+              title="View depth map"
+            >
+              2D
+            </button>
+            <button
+              @click="imageStore.viewMode = '3d'"
+              class="toggle-btn"
+              :class="{ active: imageStore.viewMode === '3d' }"
+              title="View 3D model"
+            >
+              3D
+            </button>
+          </div>
+        </div>
+        <div class="overlay-bar-right">
+          <!-- Loading Spinner / Status Messages -->
+          <div v-if="isGenerating && imageStore.viewMode === '3d'" class="loading-indicator">
+            <font-awesome-icon icon="spinner" spin />
+            <span>Generating...</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Loading Spinner - Subtle top right corner -->
-      <div v-if="isGenerating && imageStore.viewMode === '3d'" class="loading-indicator">
-        <font-awesome-icon icon="spinner" spin />
-        <span>Generating...</span>
+      <!-- Second Overlay Bar: Empty left, Gizmo placeholder right -->
+      <div class="overlay-bar overlay-bar-second">
+        <div class="overlay-bar-left">
+          <!-- Reserved for future tools -->
+        </div>
+        <div class="overlay-bar-right">
+          <!-- Gizmo will be positioned here via CSS -->
+        </div>
       </div>
 
-      <div v-if="meshResolution && imageStore.viewMode === '3d'" class="mesh-dimensions-badge">
-        {{ meshResolution.width }} × {{ meshResolution.height }} px
-      </div>
-      <div v-if="meshStats && imageStore.viewMode === '3d'" class="mesh-stats-badge">
-        <div class="stat-line">{{ meshStats.vertices.toLocaleString() }} vertices</div>
-        <div class="stat-line">{{ meshStats.memory }}</div>
+      <!-- Bottom Overlay Bar: Stats/Resolution for both 2D and 3D -->
+      <div class="overlay-bar overlay-bar-bottom">
+        <div class="overlay-bar-left">
+          <div v-if="meshStats && imageStore.viewMode === '3d'" class="mesh-info">
+            {{ meshStats.vertices.toLocaleString() }} vertices ({{ meshStats.memory }})
+          </div>
+        </div>
+        <div class="overlay-bar-right">
+          <div v-if="meshResolution && imageStore.viewMode === '3d'" class="mesh-info">
+            {{ meshResolution.width }} × {{ meshResolution.height }} px
+          </div>
+          <div v-if="imageDimensions && imageStore.viewMode === '2d'" class="mesh-info">
+            {{ imageDimensions.width }} × {{ imageDimensions.height }} px
+          </div>
+        </div>
       </div>
     </div>
     <div
@@ -287,6 +309,7 @@ function initThreeJS() {
     container: viewerRef.value,
     size: 128,
     placement: "top-right",
+    offset: { top: 80, right: 16 }, // Offset to position below the first overlay bar
   });
   console.log("ViewportGizmo created:", viewportGizmo);
   viewportGizmo.attachControls(controls);
@@ -973,17 +996,49 @@ function downloadSTL() {
   flex-grow: 1;
 }
 
-.view-mode-toggle {
+/* Overlay Bars */
+.overlay-bar {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.overlay-bar > * {
+  pointer-events: auto;
+}
+
+.overlay-bar-top {
+  top: 0;
+}
+
+.overlay-bar-second {
+  top: 4rem;
+}
+
+.overlay-bar-bottom {
+  bottom: 0;
+}
+
+.overlay-bar-left,
+.overlay-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-mode-toggle {
   display: flex;
   gap: 0.25rem;
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   padding: 0.25rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 10;
 }
 
 .toggle-btn {
@@ -1008,81 +1063,24 @@ function downloadSTL() {
   color: white;
 }
 
-.dimensions-badge {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  background-color: rgba(44, 62, 80, 0.9);
-  color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  font-family: "Courier New", monospace;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
-}
-
 .loading-indicator {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
   color: rgba(0, 0, 0, 0.7);
   padding: 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  z-index: 10;
   font-size: 0.875rem;
 }
 
-.mesh-dimensions-badge {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  background-color: rgba(44, 62, 80, 0.9);
-  color: white;
+.mesh-info {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #2c3e50;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 500;
   font-family: "Courier New", monospace;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
-  opacity: 1;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.viewer:hover + .mesh-dimensions-badge {
-  opacity: 0.2;
-}
-
-.mesh-stats-badge {
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  background-color: rgba(44, 62, 80, 0.9);
-  color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  font-family: "Courier New", monospace;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
-  opacity: 1;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  text-align: left;
-}
-
-.stat-line {
-  line-height: 1.5;
-}
-
-.viewer:hover ~ .mesh-stats-badge {
-  opacity: 0.2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .viewer-placeholder {
