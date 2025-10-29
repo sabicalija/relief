@@ -86,30 +86,29 @@ async function loadDemo(demo) {
   activeDemo.value = demo.id;
 
   try {
-    // Load depth map
-    const depthResponse = await fetch(demo.depthUrl);
-    const depthBlob = await depthResponse.blob();
-    const depthReader = new FileReader();
+    // Load both depth map and texture in parallel
+    const [depthResponse, textureResponse] = await Promise.all([fetch(demo.depthUrl), fetch(demo.originalUrl)]);
 
-    depthReader.onload = async (e) => {
-      const depthDataUrl = e.target.result;
-      imageStore.setDepthMap(depthDataUrl, `${demo.id}-depth.png`);
+    const [depthBlob, textureBlob] = await Promise.all([depthResponse.blob(), textureResponse.blob()]);
 
-      // Load original image as texture
-      const textureResponse = await fetch(demo.originalUrl);
-      const textureBlob = await textureResponse.blob();
-      const textureReader = new FileReader();
+    // Convert both to data URLs
+    const depthDataUrl = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(depthBlob);
+    });
 
-      textureReader.onload = (e) => {
-        const textureDataUrl = e.target.result;
-        imageStore.setTextureMap(textureDataUrl);
-        imageStore.setUseCustomTexture(true);
-      };
+    const textureDataUrl = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(textureBlob);
+    });
 
-      textureReader.readAsDataURL(textureBlob);
-    };
-
-    depthReader.readAsDataURL(depthBlob);
+    // Set both at once - texture first, then depth map
+    // This ensures the texture is ready when mesh generation starts
+    imageStore.setTextureMap(textureDataUrl);
+    imageStore.setUseCustomTexture(true);
+    imageStore.setDepthMap(depthDataUrl, `${demo.id}-depth.png`);
   } catch (error) {
     console.error("Error loading demo:", error);
   }
