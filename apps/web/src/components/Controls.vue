@@ -281,31 +281,31 @@ const toggleContour = () => {
   showContour.value = !showContour.value;
 };
 
-const handleDepthChange = (event) => {
+const handleDepthChange = useDebounceFn((event) => {
   // Validation happens in the store
   imageStore.setTargetDepthMm(event.target.value);
-};
+}, 500);
 
-const handleBaseThicknessChange = (event) => {
+const handleBaseThicknessChange = useDebounceFn((event) => {
   // Validation happens in the store
   imageStore.setBaseThicknessMm(event.target.value);
-};
+}, 500);
 
-const handleEnhancementStrengthChange = (event) => {
+const handleEnhancementStrengthChange = useDebounceFn((event) => {
   imageStore.setDetailEnhancementStrength(event.target.value);
-};
+}, 300);
 
-const handleContourThresholdChange = (event) => {
+const handleContourThresholdChange = useDebounceFn((event) => {
   imageStore.setContourThreshold(event.target.value);
-};
+}, 300);
 
-const handleDetailThresholdChange = (event) => {
+const handleDetailThresholdChange = useDebounceFn((event) => {
   imageStore.setDetailThreshold(event.target.value);
-};
+}, 300);
 
-const handleSmoothingKernelChange = (event) => {
+const handleSmoothingKernelChange = useDebounceFn((event) => {
   imageStore.setSmoothingKernelSize(event.target.value);
-};
+}, 300);
 
 // Debounced handler for slider change - triggers recalculation after user stops adjusting
 const handleSimplificationChange = useDebounceFn(() => {
@@ -330,9 +330,9 @@ const handleHeightChange = useDebounceFn((event) => {
   imageStore.setTargetHeightMm(event.target.value);
 }, 500);
 
-const handleResolutionChange = (event) => {
+const handleResolutionChange = useDebounceFn((event) => {
   imageStore.setMaxResolution(event.target.value);
-};
+}, 500);
 
 const setResolution = (value) => {
   imageStore.setMaxResolution(value);
