@@ -258,6 +258,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
+import { useDebounceFn } from "@vueuse/core";
 import { useImageStore } from "../stores/image";
 
 const imageStore = useImageStore();
@@ -271,8 +272,6 @@ const showContour = ref(false);
 
 // Initialize from store
 localSimplificationRatio.value = imageStore.simplificationRatio;
-
-let simplificationDebounceTimer = null;
 
 const toggleAdvanced = () => {
   showAdvanced.value = !showAdvanced.value;
@@ -308,22 +307,13 @@ const handleSmoothingKernelChange = (event) => {
   imageStore.setSmoothingKernelSize(event.target.value);
 };
 
-// Handler for slider change (mouse release) - triggers recalculation with debounce
-const handleSimplificationChange = () => {
-  if (simplificationDebounceTimer) {
-    clearTimeout(simplificationDebounceTimer);
-  }
-
-  simplificationDebounceTimer = setTimeout(() => {
-    imageStore.setSimplificationRatio(localSimplificationRatio.value);
-  }, 300); // 300ms debounce after mouse release
-};
+// Debounced handler for slider change - triggers recalculation after user stops adjusting
+const handleSimplificationChange = useDebounceFn(() => {
+  imageStore.setSimplificationRatio(localSimplificationRatio.value);
+}, 300);
 
 // Direct setter for preset buttons (immediate, no debounce needed)
 const setSimplification = (value) => {
-  if (simplificationDebounceTimer) {
-    clearTimeout(simplificationDebounceTimer);
-  }
   localSimplificationRatio.value = value;
   imageStore.setSimplificationRatio(value);
 };
@@ -331,15 +321,14 @@ const setSimplification = (value) => {
 // Simplification presets (10% to 100%)
 const simplificationPresets = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
 
-const handleWidthChange = (event) => {
-  // Validation happens in the store
+// Debounced handlers for width/height inputs - wait for user to finish typing
+const handleWidthChange = useDebounceFn((event) => {
   imageStore.setTargetWidthMm(event.target.value);
-};
+}, 500);
 
-const handleHeightChange = (event) => {
-  // Validation happens in the store
+const handleHeightChange = useDebounceFn((event) => {
   imageStore.setTargetHeightMm(event.target.value);
-};
+}, 500);
 
 const handleResolutionChange = (event) => {
   imageStore.setMaxResolution(event.target.value);
