@@ -104,11 +104,12 @@ async function loadDemo(demo) {
       reader.readAsDataURL(textureBlob);
     });
 
-    // Set both at once - texture first, then depth map
-    // This ensures the texture is ready when mesh generation starts
+    // Set depth map first (this also sets it as texture by default)
+    imageStore.setDepthMap(depthDataUrl, `${demo.id}-depth.png`);
+
+    // Then override with the custom texture (original image)
     imageStore.setTextureMap(textureDataUrl);
     imageStore.setUseCustomTexture(true);
-    imageStore.setDepthMap(depthDataUrl, `${demo.id}-depth.png`);
   } catch (error) {
     console.error("Error loading demo:", error);
   }

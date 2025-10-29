@@ -33,9 +33,9 @@ export const useImageStore = defineStore("image", () => {
 
   function setDepthMap(imageData, filename = null) {
     depthMap.value = imageData;
-    // Automatically set the depth map as the texture map too
+    // Automatically set the depth map as the texture map
     textureMap.value = imageData;
-    useCustomTexture.value = false; // Start with depth map as texture
+    useCustomTexture.value = false; // Use depth map as texture
     showTexture.value = true; // Enable texture display
     if (filename) {
       depthMapFilename.value = filename;
