@@ -941,6 +941,9 @@ function downloadSTL() {
 .viewer-container {
   position: relative;
   width: 100%;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .depth-map-view {
@@ -1114,7 +1117,7 @@ function downloadSTL() {
 
 .drag-over {
   border-color: #0d6efd !important;
-  background: linear-gradient(135deg, #e7f1ff 0%, #cfe2ff 100%) !important;
+  background: linear-gradient(135deg, rgba(231, 241, 255, 0.9) 0%, rgba(207, 226, 255, 0.9) 100%) !important;
   transform: scale(1.01);
   transition: all 0.2s ease;
 }
