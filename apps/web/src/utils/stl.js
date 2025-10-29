@@ -541,6 +541,62 @@ function buildPerimeterWalls(width, height, bottomStartIdx, faces) {
 }
 
 /**
+ * Setup geometry attributes (position and index) from vertices and faces
+ * @param {THREE.BufferGeometry} geometry - Target geometry
+ * @param {THREE.Vector3[]} vertices - Array of vertex positions
+ * @param {number[]} faces - Array of face indices
+ */
+function setupGeometryAttributes(geometry, vertices, faces) {
+  // Convert vertices to flat array
+  const positionsArray = new Float32Array(vertices.length * 3);
+  vertices.forEach((v, i) => {
+    positionsArray[i * 3] = v.x;
+    positionsArray[i * 3 + 1] = v.y;
+    positionsArray[i * 3 + 2] = v.z;
+  });
+
+  geometry.setAttribute("position", new THREE.BufferAttribute(positionsArray, 3));
+  geometry.setIndex(faces);
+  geometry.computeVertexNormals();
+}
+
+/**
+ * Generate UV coordinates for texture mapping
+ * @param {THREE.BufferGeometry} geometry - Target geometry
+ * @param {THREE.Vector3[]} vertices - Array of vertex positions
+ * @param {number} segmentsX - Number of segments in X direction
+ * @param {number} segmentsY - Number of segments in Y direction
+ */
+function generateUVCoordinates(geometry, vertices, segmentsX, segmentsY) {
+  const uvs = new Float32Array(vertices.length * 2);
+  const numCols = segmentsX + 1;
+  vertices.forEach((v, i) => {
+    const col = i % numCols;
+    const row = Math.floor(i / numCols);
+    uvs[i * 2] = col / segmentsX; // U coordinate (0-1)
+    uvs[i * 2 + 1] = 1 - row / segmentsY; // V coordinate (0-1, flipped)
+  });
+  geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+}
+
+/**
+ * Setup material groups for different parts of the mesh
+ * @param {THREE.BufferGeometry} geometry - Target geometry
+ * @param {number} segmentsX - Number of segments in X direction
+ * @param {number} segmentsY - Number of segments in Y direction
+ * @param {number} totalFaces - Total number of face indices
+ */
+function setupMaterialGroups(geometry, segmentsX, segmentsY, totalFaces) {
+  // Group 0: Top surface (with texture)
+  const topFaceCount = segmentsX * segmentsY * 2 * 3; // 2 triangles per quad, 3 vertices per triangle
+  geometry.addGroup(0, topFaceCount, 0);
+
+  // Group 1: Bottom and walls (solid color)
+  const remainingFaces = totalFaces - topFaceCount;
+  geometry.addGroup(topFaceCount, remainingFaces, 1);
+}
+
+/**
  * Build 3D mesh geometry from processed depth map
  * @param {Float32Array} depthMap - Processed depth values (0-1 range)
  * @param {number} width - Depth map width
@@ -566,40 +622,15 @@ function buildMeshGeometry(depthMap, width, height, meshParams) {
   // 3. Build PERIMETER WALLS
   buildPerimeterWalls(width, height, bottomStartIdx, faces);
 
-  // Create BufferGeometry
+  // 4. Create BufferGeometry and setup attributes
   const geometry = new THREE.BufferGeometry();
+  setupGeometryAttributes(geometry, vertices, faces);
 
-  // Convert vertices to flat array
-  const positionsArray = new Float32Array(vertices.length * 3);
-  vertices.forEach((v, i) => {
-    positionsArray[i * 3] = v.x;
-    positionsArray[i * 3 + 1] = v.y;
-    positionsArray[i * 3 + 2] = v.z;
-  });
+  // 5. Generate UV coordinates for texture mapping
+  generateUVCoordinates(geometry, vertices, segmentsX, segmentsY);
 
-  geometry.setAttribute("position", new THREE.BufferAttribute(positionsArray, 3));
-  geometry.setIndex(faces);
-  geometry.computeVertexNormals();
-
-  // Generate UV coordinates for texture mapping
-  const uvs = new Float32Array(vertices.length * 2);
-  const numCols = segmentsX + 1;
-  vertices.forEach((v, i) => {
-    const col = i % numCols;
-    const row = Math.floor(i / numCols);
-    uvs[i * 2] = col / segmentsX; // U coordinate (0-1)
-    uvs[i * 2 + 1] = 1 - row / segmentsY; // V coordinate (0-1, flipped)
-  });
-  geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-
-  // Define material groups for different parts of the mesh
-  // Group 0: Top surface (with texture)
-  const topFaceCount = segmentsX * segmentsY * 2 * 3; // 2 triangles per quad, 3 vertices per triangle
-  geometry.addGroup(0, topFaceCount, 0);
-
-  // Group 1: Bottom and walls (solid color)
-  const remainingFaces = faces.length - topFaceCount;
-  geometry.addGroup(topFaceCount, remainingFaces, 1);
+  // 6. Define material groups for different parts of the mesh
+  setupMaterialGroups(geometry, segmentsX, segmentsY, faces.length);
 
   return { geometry, segmentsX, segmentsY };
 }
