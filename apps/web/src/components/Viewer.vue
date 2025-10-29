@@ -164,7 +164,7 @@ import { useImageStore } from "../stores/image";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { ViewportGizmo } from "three-viewport-gizmo";
-import { createMeshFromDepthMap, exportToSTL, download } from "../utils/stl";
+import { createMeshFromDepthMap, exportToSTL, download } from "../utils/mesh/index.js";
 
 const imageStore = useImageStore();
 const viewerRef = ref(null);
