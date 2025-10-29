@@ -9,7 +9,7 @@ import { STLExporter } from "three/examples/jsm/exporters/STLExporter.js";
  * @param {number} strength - Enhancement strength (1.0 = full equalization)
  * @returns {Float32Array} Enhanced depth map
  */
-function adaptiveHistogramEqualization(depthMap, width, height, strength) {
+export function adaptiveHistogramEqualization(depthMap, width, height, strength) {
   // Create histogram of depth values (256 bins)
   const bins = 256;
   const hist = new Array(bins).fill(0);
@@ -60,7 +60,7 @@ function adaptiveHistogramEqualization(depthMap, width, height, strength) {
  * @param {number} kernelSize - Size of the Gaussian kernel (odd number)
  * @returns {Float32Array} Smoothed depth map
  */
-function gaussianSmooth(depthMap, width, height, kernelSize) {
+export function gaussianSmooth(depthMap, width, height, kernelSize) {
   if (kernelSize <= 1) return depthMap;
 
   const sigma = kernelSize / 3.0;
@@ -117,7 +117,7 @@ function gaussianSmooth(depthMap, width, height, kernelSize) {
  * @param {Object} contourConfig - Contour configuration
  * @returns {Float32Array} Flattened depth map (or original if disabled)
  */
-function applyContourFlattening(depthMap, contourConfig) {
+export function applyContourFlattening(depthMap, contourConfig) {
   const { enableContour = false, contourThreshold } = contourConfig;
 
   if (!enableContour || contourThreshold === undefined) {
@@ -143,7 +143,7 @@ function applyContourFlattening(depthMap, contourConfig) {
  * @param {Object} enhanceConfig - Enhancement configuration
  * @returns {Float32Array} Enhanced depth map
  */
-function enhanceDepthDetails(depthMap, width, height, enhanceConfig) {
+export function enhanceDepthDetails(depthMap, width, height, enhanceConfig) {
   const {
     enhanceDetails = false,
     detailEnhancementStrength = 1.5,
