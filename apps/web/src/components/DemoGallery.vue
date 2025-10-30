@@ -104,7 +104,7 @@ async function loadDemo(demo) {
       reader.readAsDataURL(textureBlob);
     });
 
-    // Set depth map first (this also sets it as texture by default)
+    // Set depth map first (this also sets it as texture by default and extracts dimensions)
     imageStore.setDepthMap(depthDataUrl, `${demo.id}-depth.png`);
 
     // Then override with the custom texture (original image)

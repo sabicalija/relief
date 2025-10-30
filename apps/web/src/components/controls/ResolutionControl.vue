@@ -133,8 +133,10 @@ label {
 }
 
 .resolution-label {
-  @include label-base;
-  display: inline;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-700);
+  margin-bottom: 0;
 }
 
 .resolution-value,
@@ -187,6 +189,8 @@ label {
 
 .hint {
   font-size: var(--font-size-xs);
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin: 0;
 }
 </style>

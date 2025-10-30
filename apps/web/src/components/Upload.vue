@@ -35,7 +35,7 @@ const handleFileUpload = (event) => {
   border-radius: var(--radius-lg);
   font-size: var(--font-size-lg);
   background: var(--color-primary);
-  
+
   &:hover {
     background: var(--color-primary-dark);
   }

@@ -32,6 +32,17 @@ export const useImageStore = defineStore("image", () => {
   const contourThreshold = ref(0.8); // Z threshold (0-1) - vertices above this are flattened
 
   function setDepthMap(imageData, filename = null) {
+    // Load image to get dimensions
+    const img = new Image();
+    img.onload = () => {
+      // Set image dimensions
+      imageDimensions.value = {
+        width: img.width,
+        height: img.height,
+      };
+    };
+    img.src = imageData;
+
     depthMap.value = imageData;
     // Automatically set the depth map as the texture map
     textureMap.value = imageData;

@@ -45,7 +45,7 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
     // Read and load the image
     const reader = new FileReader();
     reader.onload = (event) => {
-      imageStore.depthMap = event.target?.result;
+      imageStore.setDepthMap(event.target?.result);
       // Clear custom texture so the depth map is used as texture
       imageStore.textureMap = null;
       imageStore.useCustomTexture = false;
