@@ -2,7 +2,7 @@
   <div class="viewer-3d">
     <TresCanvas v-bind="canvasProps">
       <TresPerspectiveCamera :position="[0, 150, 150]" :make-default="true" />
-      <OrbitControls />
+      <CameraControls />
 
       <TresAmbientLight :intensity="1.5" />
       <TresDirectionalLight :position="[1, 1, 1]" :intensity="1" />
@@ -25,7 +25,7 @@
 
 <script setup>
 import { TresCanvas } from "@tresjs/core";
-import { OrbitControls } from "@tresjs/cientos";
+import { CameraControls } from "@tresjs/cientos";
 import { reactive, watch, ref, markRaw } from "vue";
 import { useImageStore } from "../../stores/image";
 import { createMeshFromDepthMap } from "../../utils/mesh/index.js";
