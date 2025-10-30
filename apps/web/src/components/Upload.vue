@@ -13,11 +13,7 @@ const imageStore = useImageStore();
 const handleFileUpload = (event) => {
   const file = event.target.files[0];
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      imageStore.setDepthMap(e.target.result, file.name);
-    };
-    reader.readAsDataURL(file);
+    imageStore.loadDepthMapFromFile(file);
   }
 };
 </script>

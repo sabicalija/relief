@@ -31,25 +31,7 @@ const dropZoneRef = ref(null);
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop(files) {
     if (!files || files.length === 0) return;
-
-    const file = files[0];
-
-    // Check if it's an image
-    if (!file.type.startsWith("image/")) {
-      console.warn("Please drop an image file");
-      return;
-    }
-
-    // Read and load the image
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      imageStore.setDepthMap(event.target?.result);
-      // Clear custom texture so the depth map is used as texture
-      imageStore.textureMap = null;
-      imageStore.useCustomTexture = false;
-      imageStore.viewMode = "3d"; // Switch to 3D view after loading
-    };
-    reader.readAsDataURL(file);
+    imageStore.loadDepthMapFromFile(files[0]);
   },
 });
 </script>

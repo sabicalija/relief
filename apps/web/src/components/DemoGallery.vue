@@ -84,32 +84,9 @@ const demos = [
 
 async function loadDemo(demo) {
   activeDemo.value = demo.id;
-
   try {
-    // Load both depth map and texture in parallel
-    const [depthResponse, textureResponse] = await Promise.all([fetch(demo.depthUrl), fetch(demo.originalUrl)]);
-
-    const [depthBlob, textureBlob] = await Promise.all([depthResponse.blob(), textureResponse.blob()]);
-
-    // Convert both to data URLs
-    const depthDataUrl = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.readAsDataURL(depthBlob);
-    });
-
-    const textureDataUrl = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.readAsDataURL(textureBlob);
-    });
-
-    // Set depth map first (this also sets it as texture by default and extracts dimensions)
-    imageStore.setDepthMap(depthDataUrl, `${demo.id}-depth.png`);
-
-    // Then override with the custom texture (original image)
-    imageStore.setTextureMap(textureDataUrl);
-    imageStore.setUseCustomTexture(true);
+    // Delegate fetching & setting to the store helper (fetches depth and optional texture)
+    await imageStore.loadDepthMapFromUrl(demo.depthUrl, demo.originalUrl, `${demo.id}-depth.png`);
   } catch (error) {
     console.error("Error loading demo:", error);
   }
