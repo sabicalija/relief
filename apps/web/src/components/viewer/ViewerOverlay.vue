@@ -3,15 +3,15 @@
     <!-- View Mode Toggle -->
     <div class="view-mode-toggle">
       <button
-        @click="$emit('update:viewMode', '2d')"
-        :class="['toggle-btn', { active: viewMode === '2d' }]"
+        @click="imageStore.viewMode = '2d'"
+        :class="['toggle-btn', { active: imageStore.viewMode === '2d' }]"
         title="View depth map"
       >
         2D
       </button>
       <button
-        @click="$emit('update:viewMode', '3d')"
-        :class="['toggle-btn', { active: viewMode === '3d' }]"
+        @click="imageStore.viewMode = '3d'"
+        :class="['toggle-btn', { active: imageStore.viewMode === '3d' }]"
         title="View 3D model"
       >
         3D
@@ -21,14 +21,9 @@
 </template>
 
 <script setup>
-defineProps({
-  viewMode: {
-    type: String,
-    required: true,
-  },
-});
+import { useImageStore } from "../../stores/image";
 
-defineEmits(["update:viewMode"]);
+const imageStore = useImageStore();
 </script>
 
 <style scoped lang="scss">

@@ -28,16 +28,9 @@ import { useImageStore } from "../../stores/image";
 import { createMeshFromDepthMap } from "../../utils/mesh/index.js";
 import Viewer3DOverlay from "./Viewer3DOverlay.vue";
 
-const emit = defineEmits(["update:is-generating"]);
-
 const imageStore = useImageStore();
 const mesh = ref(null);
 const isGenerating = ref(false);
-
-// Emit isGenerating changes to parent
-watch(isGenerating, (value) => {
-  emit("update:is-generating", value);
-});
 
 // Canvas configuration
 const canvasProps = reactive({

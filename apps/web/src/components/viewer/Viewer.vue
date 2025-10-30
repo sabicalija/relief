@@ -2,11 +2,11 @@
   <div ref="dropZoneRef" class="tres-viewer" :class="{ 'drag-over': isOverDropZone }">
     <!-- Show viewer when depth map exists -->
     <div v-if="imageStore.depthMap" class="viewer-container">
-      <Viewer2D v-show="viewMode === '2d'" />
-      <Viewer3D v-show="viewMode === '3d'" @update:is-generating="isGenerating = $event" />
+      <Viewer2D v-show="imageStore.viewMode === '2d'" />
+      <Viewer3D v-show="imageStore.viewMode === '3d'" />
 
       <!-- View mode toggle overlay -->
-      <ViewerOverlay v-model:view-mode="viewMode" />
+      <ViewerOverlay />
     </div>
 
     <!-- Show placeholder when no depth map -->
@@ -26,9 +26,7 @@ import ViewerOverlay from "./ViewerOverlay.vue";
 import ViewerPlaceholder from "./ViewerPlaceholder.vue";
 
 const imageStore = useImageStore();
-const viewMode = ref("2d");
 const dropZoneRef = ref(null);
-const isGenerating = ref(false);
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop(files) {
@@ -49,7 +47,7 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
       // Clear custom texture so the depth map is used as texture
       imageStore.textureMap = null;
       imageStore.useCustomTexture = false;
-      viewMode.value = "3d"; // Switch to 3D view after loading
+      imageStore.viewMode = "3d"; // Switch to 3D view after loading
     };
     reader.readAsDataURL(file);
   },
