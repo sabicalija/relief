@@ -13,6 +13,9 @@
 
       <!-- Render mesh when available -->
       <primitive v-if="mesh" :object="mesh" />
+
+      <!-- Gizmo setup component -->
+      <GizmoSetup />
     </TresCanvas>
 
     <!-- Loading overlay -->
@@ -27,6 +30,7 @@ import { reactive, watch, ref, markRaw } from "vue";
 import { useImageStore } from "../../stores/image";
 import { createMeshFromDepthMap } from "../../utils/mesh/index.js";
 import Viewer3DOverlay from "./Viewer3DOverlay.vue";
+import GizmoSetup from "./GizmoSetup.vue";
 
 const imageStore = useImageStore();
 const mesh = ref(null);
