@@ -1,329 +1,38 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { createImageState } from "./image/state.js";
+import { createLoaders } from "./image/loaders.js";
+import { createDimensionSetters } from "./image/dimensions.js";
+import { createMeshSetters } from "./image/mesh.js";
+import { createEnhancementSetters } from "./image/enhancements.js";
+import { createContourSetters } from "./image/contour.js";
+import { createDisplaySetters } from "./image/display.js";
 
+/**
+ * Image store - manages depth maps, textures, and mesh configuration
+ * Modular structure with separate concerns for better maintainability
+ */
 export const useImageStore = defineStore("image", () => {
-  const depthMap = ref(null);
-  const textureMap = ref(null); // Optional separate texture for mesh
-  const useCustomTexture = ref(false); // Switch between depth map and custom texture
-  const imageDimensions = ref(null); // Store original image dimensions
-  const depthMapFilename = ref(null); // Original filename of the depth map
-  const viewMode = ref("3d"); // "2d" for depth map, "3d" for STL viewer
+  // Create all state refs
+  const state = createImageState();
 
-  // Relief config parameters - all in mm for consistency
-  const targetDepthMm = ref(20.0);
-  const baseThicknessMm = ref(10.0);
-  const targetWidthMm = ref(null);
-  const targetHeightMm = ref(null);
-  const maxResolution = ref(1024); // Maximum resolution for mesh generation
-  const simplificationRatio = ref(1.0); // Mesh simplification ratio (0.0-1.0, 1.0 = no simplification)
-  const showTexture = ref(true); // Toggle for depth map texture projection
-  const showGrid = ref(true); // Toggle for grid helper in viewer
-  const baseColor = ref("#808080"); // Color for perimeter walls and bottom surface
+  // Create all action groups (pass state refs they need)
+  const loaders = createLoaders(state);
+  const dimensions = createDimensionSetters(state);
+  const mesh = createMeshSetters(state);
+  const enhancements = createEnhancementSetters(state);
+  const contour = createContourSetters(state);
+  const display = createDisplaySetters(state);
 
-  // Advanced depth enhancement options
-  const enhanceDetails = ref(false); // Enable adaptive depth enhancement
-  const detailEnhancementStrength = ref(1.5); // How much to enhance fine details (1.0 = no enhancement)
-  const detailThreshold = ref(0.1); // Threshold for what counts as "close" values (0.0-1.0)
-  const preserveMajorFeatures = ref(true); // Keep large depth differences intact
-  const smoothingKernelSize = ref(3); // Size of smoothing kernel for noise reduction
-
-  // Contour feature - flatten vertices above threshold
-  const enableContour = ref(false); // Enable contour flattening
-  const contourThreshold = ref(0.8); // Z threshold (0-1) - vertices above this are flattened
-
-  function loadDepthMapFromFile(file) {
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      console.warn("Please provide an image file");
-      return Promise.reject(new Error("Invalid file type"));
-    }
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageData = event.target?.result;
-        if (!imageData) {
-          reject(new Error("Failed to read file"));
-          return;
-        }
-
-        // Load image to get dimensions
-        const img = new Image();
-        img.onload = () => {
-          // Set image dimensions
-          imageDimensions.value = {
-            width: img.width,
-            height: img.height,
-          };
-
-          // Set depth map and related state
-          depthMap.value = imageData;
-          textureMap.value = imageData;
-          useCustomTexture.value = false;
-          showTexture.value = true;
-          depthMapFilename.value = file.name;
-
-          // Switch to 3D view
-          viewMode.value = "3d";
-
-          resolve();
-        };
-        img.onerror = () => {
-          reject(new Error("Failed to load image"));
-        };
-        img.src = imageData;
-      };
-      reader.onerror = () => {
-        reject(new Error("Failed to read file"));
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function setDepthMap(imageData, filename = null) {
-    // Load image to get dimensions
-    const img = new Image();
-    img.onload = () => {
-      // Set image dimensions
-      imageDimensions.value = {
-        width: img.width,
-        height: img.height,
-      };
-    };
-    img.src = imageData;
-
-    depthMap.value = imageData;
-    // Automatically set the depth map as the texture map
-    textureMap.value = imageData;
-    useCustomTexture.value = false; // Use depth map as texture
-    showTexture.value = true; // Enable texture display
-    if (filename) {
-      depthMapFilename.value = filename;
-    }
-  }
-
-  async function loadDepthMapFromUrl(depthUrl, originalUrl = null, filename = null) {
-    try {
-      // Fetch depth map (required)
-      const depthResponse = await fetch(depthUrl);
-      if (!depthResponse.ok) throw new Error(`Failed to fetch depth map: ${depthResponse.status}`);
-      const depthBlob = await depthResponse.blob();
-
-      // Convert depth blob to data URL
-      const depthDataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => reject(new Error("Failed to read depth blob"));
-        reader.readAsDataURL(depthBlob);
-      });
-
-      // If an original texture URL is provided, fetch and convert it as well
-      let textureDataUrl = null;
-      if (originalUrl) {
-        const texResponse = await fetch(originalUrl);
-        if (!texResponse.ok) throw new Error(`Failed to fetch texture: ${texResponse.status}`);
-        const texBlob = await texResponse.blob();
-        textureDataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target.result);
-          reader.onerror = () => reject(new Error("Failed to read texture blob"));
-          reader.readAsDataURL(texBlob);
-        });
-      }
-
-      // Use existing helpers to set depth map (this extracts dimensions)
-      setDepthMap(depthDataUrl, filename || null);
-
-      // If texture provided, set it and enable custom texture
-      if (textureDataUrl) {
-        setTextureMap(textureDataUrl);
-        setUseCustomTexture(true);
-      }
-
-      return;
-    } catch (err) {
-      console.error("Error in loadDepthMapFromUrl:", err);
-      throw err;
-    }
-  }
-
-  function setTextureMap(imageData) {
-    textureMap.value = imageData;
-  }
-
-  function clearTextureMap() {
-    textureMap.value = null;
-    useCustomTexture.value = false;
-  }
-
-  function clearDepthMap() {
-    depthMap.value = null;
-    textureMap.value = null;
-    imageDimensions.value = null;
-    depthMapFilename.value = null;
-  }
-
-  function setImageDimensions(dimensions) {
-    imageDimensions.value = dimensions;
-  }
-
-  function setMaxResolution(value) {
-    const parsed = parseInt(value);
-
-    // If no dimensions yet, use safe default
-    if (!imageDimensions.value) {
-      maxResolution.value = Math.max(1, parsed || 1024);
-      return;
-    }
-
-    const { width, height } = imageDimensions.value;
-    const maxDim = Math.max(width, height);
-
-    // Validate: minimum 1px for the maxResolution, maximum is original max dimension
-    // This allows the smaller dimension to scale down below 1px if user wants
-    const validated = Math.max(1, Math.min(maxDim, parsed || 1024));
-    maxResolution.value = validated;
-  }
-
-  function setTargetDepthMm(value) {
-    // Validate: must be positive, minimum 0.1 mm (no max limit)
-    const validated = Math.max(0.1, parseFloat(value));
-    targetDepthMm.value = validated;
-  }
-
-  function setBaseThicknessMm(value) {
-    // Validate: must be non-negative (0 or greater, no max limit)
-    const validated = Math.max(0.0, parseFloat(value));
-    baseThicknessMm.value = validated;
-  }
-
-  function setTargetWidthMm(value) {
-    // Validate: must be null or positive number >= 1
-    if (value === null || value === "") {
-      targetWidthMm.value = null;
-    } else {
-      const validated = Math.max(1, parseFloat(value));
-      targetWidthMm.value = validated;
-    }
-  }
-
-  function setTargetHeightMm(value) {
-    // Validate: must be null or positive number >= 1
-    if (value === null || value === "") {
-      targetHeightMm.value = null;
-    } else {
-      const validated = Math.max(1, parseFloat(value));
-      targetHeightMm.value = validated;
-    }
-  }
-
-  function setShowTexture(value) {
-    showTexture.value = value;
-  }
-
-  function setShowGrid(value) {
-    showGrid.value = value;
-  }
-
-  function setBaseColor(value) {
-    baseColor.value = value;
-  }
-
-  function setSimplificationRatio(value) {
-    const parsed = parseFloat(value);
-    // Validate: must be between 0.01 and 1.0
-    simplificationRatio.value = Math.max(0.01, Math.min(1.0, parsed || 1.0));
-  }
-
-  function setUseCustomTexture(value) {
-    useCustomTexture.value = value;
-  }
-
-  function setEnhanceDetails(value) {
-    enhanceDetails.value = value;
-  }
-
-  function setDetailEnhancementStrength(value) {
-    const parsed = parseFloat(value);
-    // Validate: must be between 1.0 and 5.0
-    detailEnhancementStrength.value = Math.max(1.0, Math.min(5.0, parsed || 1.5));
-  }
-
-  function setDetailThreshold(value) {
-    const parsed = parseFloat(value);
-    // Validate: must be between 0.0 and 1.0
-    detailThreshold.value = Math.max(0.0, Math.min(1.0, parsed || 0.1));
-  }
-
-  function setPreserveMajorFeatures(value) {
-    preserveMajorFeatures.value = value;
-  }
-
-  function setSmoothingKernelSize(value) {
-    const parsed = parseInt(value);
-    // Validate: must be odd number between 1 and 15
-    let validated = Math.max(1, Math.min(15, parsed || 3));
-    // Make it odd
-    if (validated % 2 === 0) validated += 1;
-    smoothingKernelSize.value = validated;
-  }
-
-  function setEnableContour(value) {
-    enableContour.value = value;
-  }
-
-  function setContourThreshold(value) {
-    const parsed = parseFloat(value);
-    contourThreshold.value = Math.max(0.0, Math.min(1.0, parsed || 0.8));
-  }
-
+  // Return flattened API (backward compatible with existing components)
   return {
-    depthMap,
-    textureMap,
-    useCustomTexture,
-    imageDimensions,
-    depthMapFilename,
-    targetDepthMm,
-    baseThicknessMm,
-    targetWidthMm,
-    targetHeightMm,
-    maxResolution,
-    simplificationRatio,
-    showTexture,
-    showGrid,
-    baseColor,
-    enhanceDetails,
-    detailEnhancementStrength,
-    detailThreshold,
-    preserveMajorFeatures,
-    smoothingKernelSize,
-    enableContour,
-    contourThreshold,
-    viewMode,
-    loadDepthMapFromFile,
-    loadDepthMapFromUrl,
-    setDepthMap,
-    setTextureMap,
-    clearTextureMap,
-    setUseCustomTexture,
-    clearDepthMap,
-    setImageDimensions,
-    setTargetDepthMm,
-    setBaseThicknessMm,
-    setTargetWidthMm,
-    setTargetHeightMm,
-    setMaxResolution,
-    setSimplificationRatio,
-    setShowTexture,
-    setShowGrid,
-    setBaseColor,
-    setEnhanceDetails,
-    setDetailEnhancementStrength,
-    setDetailThreshold,
-    setPreserveMajorFeatures,
-    setSmoothingKernelSize,
-    setEnableContour,
-    setContourThreshold,
-    setSmoothingKernelSize,
+    // State
+    ...state,
+    // Actions
+    ...loaders,
+    ...dimensions,
+    ...mesh,
+    ...enhancements,
+    ...contour,
+    ...display,
   };
 });
