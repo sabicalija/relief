@@ -1,0 +1,21 @@
+// Global CSS Custom Properties (runtime-changeable)
+
+:root {
+  // Overlay positioning
+  --overlay-spacing: 1rem;
+  --overlay-z-index: 10;
+  
+  // Overlay appearance
+  --overlay-bg-light: rgba(255, 255, 255, 0.9);
+  --overlay-bg-dark: rgba(0, 0, 0, 0.7);
+  --overlay-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --overlay-border-radius: 6px;
+  --overlay-padding-compact: 0.25rem;
+  --overlay-padding: 0.5rem;
+  
+  // Typography
+  --overlay-font-size: 0.875rem;
+  
+  // Colors
+  --overlay-primary: #3b82f6;
+}

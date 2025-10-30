@@ -14,6 +14,9 @@
       <!-- Render mesh when available -->
       <primitive v-if="mesh" :object="mesh" />
     </TresCanvas>
+
+    <!-- Loading overlay -->
+    <Viewer3DOverlay :is-generating="isGenerating" />
   </div>
 </template>
 
@@ -23,9 +26,18 @@ import { OrbitControls } from "@tresjs/cientos";
 import { reactive, watch, ref, markRaw } from "vue";
 import { useImageStore } from "../../stores/image";
 import { createMeshFromDepthMap } from "../../utils/mesh/index.js";
+import Viewer3DOverlay from "./Viewer3DOverlay.vue";
+
+const emit = defineEmits(["update:is-generating"]);
 
 const imageStore = useImageStore();
 const mesh = ref(null);
+const isGenerating = ref(false);
+
+// Emit isGenerating changes to parent
+watch(isGenerating, (value) => {
+  emit("update:is-generating", value);
+});
 
 // Canvas configuration
 const canvasProps = reactive({
@@ -43,6 +55,7 @@ watch(
       return;
     }
 
+    isGenerating.value = true;
     console.log("🔄 Generating mesh from depth map...");
 
     try {
@@ -108,6 +121,8 @@ watch(
       console.log("✅ Mesh generated successfully");
     } catch (error) {
       console.error("❌ Error generating mesh:", error);
+    } finally {
+      isGenerating.value = false;
     }
   },
   { immediate: true }
@@ -135,6 +150,7 @@ watch(
   async () => {
     if (!imageStore.depthMap) return;
 
+    isGenerating.value = true;
     console.log("🔄 Regenerating mesh due to parameter change...");
 
     try {
@@ -200,6 +216,8 @@ watch(
       console.log("✅ Mesh regenerated successfully");
     } catch (error) {
       console.error("❌ Error regenerating mesh:", error);
+    } finally {
+      isGenerating.value = false;
     }
   }
 );
@@ -207,9 +225,11 @@ watch(
 
 <style scoped>
 .viewer-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 500px;
-  position: relative;
+  height: 100%;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

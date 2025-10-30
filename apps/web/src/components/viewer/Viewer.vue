@@ -4,7 +4,9 @@
 
     <div ref="dropZoneRef" class="viewer-container" :class="{ 'drag-over': isOverDropZone }">
       <Viewer2D v-show="viewMode === '2d'" />
-      <Viewer3D v-show="viewMode === '3d'" />
+      <Viewer3D v-show="viewMode === '3d'" @update:is-generating="isGenerating = $event" />
+
+      <!-- View mode toggle overlay -->
       <ViewerOverlay v-model:view-mode="viewMode" />
     </div>
   </div>
@@ -21,6 +23,7 @@ import ViewerOverlay from "./ViewerOverlay.vue";
 const imageStore = useImageStore();
 const viewMode = ref("2d");
 const dropZoneRef = ref(null);
+const isGenerating = ref(false);
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop(files) {
@@ -62,6 +65,7 @@ h2 {
 
 .viewer-container {
   width: 100%;
+  height: 500px;
   position: relative;
   transition: all 0.2s;
 }

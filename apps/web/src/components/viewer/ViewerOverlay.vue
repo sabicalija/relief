@@ -31,12 +31,17 @@ defineProps({
 defineEmits(["update:viewMode"]);
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use "@/styles/overlays.scss" as overlays;
+
 .viewer-overlay {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 10;
+  @include overlays.overlay-base;
+  @include overlays.overlay-top-left;
+  pointer-events: none; // Make container non-interactive
+}
+
+.viewer-overlay > * {
+  pointer-events: auto; // Make children interactive
 }
 
 .view-mode-toggle {
@@ -52,7 +57,7 @@ defineEmits(["update:viewMode"]);
   padding: 0.4rem 0.8rem;
   border: none;
   background-color: transparent;
-  color: #6b7280;
+  color: #4b5563; /* Dark gray for inactive buttons */
   font-size: 0.875rem;
   font-weight: 500;
   border-radius: 4px;
@@ -60,13 +65,13 @@ defineEmits(["update:viewMode"]);
   transition: all 0.2s;
 }
 
-.toggle-btn:hover {
+.toggle-btn:hover:not(.active) {
   background-color: rgba(0, 0, 0, 0.05);
-  color: #374151;
+  color: #1f2937; /* Even darker on hover */
 }
 
 .toggle-btn.active {
-  background-color: #3b82f6;
-  color: white;
+  background-color: #3b82f6; /* Direct color instead of CSS variable */
+  color: white; /* White text on blue background */
 }
 </style>

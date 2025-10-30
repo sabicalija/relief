@@ -1,0 +1,43 @@
+// Shared mixins for viewer overlays
+// Uses CSS custom properties from vars.scss
+
+@mixin overlay-base {
+  position: absolute;
+  z-index: var(--overlay-z-index);
+  pointer-events: auto;
+}
+
+@mixin overlay-top-left {
+  top: 0.75rem; // Match legacy overlay-bar padding
+  left: 1rem;
+}
+
+@mixin overlay-top-right {
+  top: 0.75rem; // Match legacy overlay-bar padding
+  right: 1rem;
+}
+
+@mixin overlay-bottom-left {
+  bottom: var(--overlay-spacing);
+  left: var(--overlay-spacing);
+}
+
+@mixin overlay-bottom-right {
+  bottom: var(--overlay-spacing);
+  right: var(--overlay-spacing);
+}
+
+@mixin overlay-light-style {
+  background-color: var(--overlay-bg-light);
+  box-shadow: var(--overlay-shadow);
+  border-radius: var(--overlay-border-radius);
+  padding: var(--overlay-padding-compact);
+}
+
+@mixin overlay-dark-style {
+  background-color: var(--overlay-bg-dark);
+  color: white;
+  border-radius: var(--overlay-border-radius);
+  padding: var(--overlay-padding);
+  font-size: var(--overlay-font-size);
+}
