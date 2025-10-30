@@ -32,7 +32,7 @@ defineEmits(["update:viewMode"]);
 </script>
 
 <style scoped lang="scss">
-@use "@/styles/overlays.scss" as overlays;
+@use "@/styles/layout/overlays.scss" as overlays;
 
 .viewer-overlay {
   @include overlays.overlay-base;

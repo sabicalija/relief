@@ -116,53 +116,60 @@ async function loadDemo(demo) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+// No mixins needed, only uses CSS custom properties
+
 .demo-gallery {
   margin-top: 4rem;
-  padding: 2rem;
-  background: linear-gradient(to bottom, #f8f9fa, #ffffff);
-  border-radius: 12px;
+  padding: var(--spacing-xl);
+  background: linear-gradient(to bottom, var(--color-bg), var(--color-bg-white));
+  border-radius: var(--radius-xl);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
   font-size: 2rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
 }
 
 .subtitle {
-  color: #6c757d;
-  margin-bottom: 2rem;
-  font-size: 1rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-md);
 }
 
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  gap: var(--spacing-lg);
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .demo-card {
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: white;
+  background: var(--color-bg-white);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: all var(--transition-slow);
   position: relative;
-}
 
-.demo-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
 
-.demo-card.active {
-  border: 3px solid #42b983;
-  box-shadow: 0 4px 12px rgba(66, 185, 131, 0.3);
+  &.active {
+    border: 3px solid var(--color-primary);
+    box-shadow: 0 4px 12px rgba(66, 185, 131, 0.3);
+
+    .demo-label {
+      background: var(--color-primary);
+      color: white;
+    }
+  }
 }
 
 .demo-image {
@@ -170,26 +177,21 @@ h2 {
   height: 200px;
   object-fit: contain;
   display: block;
-  background: #f8f9fa;
+  background: var(--color-bg);
 }
 
 .demo-label {
   padding: 0.75rem;
   text-align: center;
-  font-weight: 500;
-  color: #2c3e50;
-  background: white;
-}
-
-.demo-card.active .demo-label {
-  background: #42b983;
-  color: white;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  background: var(--color-bg-white);
 }
 
 @media (max-width: 768px) {
   .gallery-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    gap: var(--spacing-md);
   }
 
   .demo-image {

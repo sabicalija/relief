@@ -22,24 +22,23 @@ const handleFileUpload = (event) => {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use "../styles/controls/buttons" as *;
+
 .upload {
-  margin: 2rem 0;
+  margin: var(--spacing-xl) 0;
 }
 
 .upload-label {
+  @include btn-preset;
   display: inline-block;
-  padding: 1rem 2rem;
-  background-color: #42b983;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  transition: background-color 0.3s;
-}
-
-.upload-label:hover {
-  background-color: #359268;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-lg);
+  background: var(--color-primary);
+  
+  &:hover {
+    background: var(--color-primary-dark);
+  }
 }
 
 .file-input {

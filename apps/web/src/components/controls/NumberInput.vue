@@ -47,36 +47,26 @@ watch(
 );
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "../../styles/controls/forms" as *;
+@use "../../styles/controls/labels" as *;
+
 .control-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-xs);
 }
 
 label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
+  @include label-base;
 }
 
 .number-input {
-  padding: 0.5rem;
-  font-size: 1rem;
-  border: 2px solid #d3d3d3;
-  border-radius: 4px;
-  outline: none;
-  transition: border-color 0.3s;
-}
-
-.number-input:focus {
-  border-color: #42b983;
+  @include input-base;
 }
 
 .hint {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #888;
-  font-style: italic;
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.6);
 }
 </style>

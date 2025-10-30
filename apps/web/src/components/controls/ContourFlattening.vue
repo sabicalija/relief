@@ -39,109 +39,78 @@ const updateThreshold = useDebounceFn(() => store.setContourThreshold(contourThr
 watch(contourThreshold, updateThreshold);
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use "../../styles/controls/forms" as *;
+@use "../../styles/controls/labels" as *;
+@use "../../styles/controls/utilities" as *;
+
 .advanced-section {
   grid-column: 1 / -1;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
   border-top: 2px solid #e9ecef;
 }
 
 h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 var(--spacing-md) 0;
 }
 
 .toggle-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   background: none;
   border: none;
   font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c3e50;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
   cursor: pointer;
   padding: 0;
-  transition: color 0.2s;
-}
+  transition: color var(--transition-base);
 
-.toggle-btn:hover {
-  color: #42b983;
+  &:hover {
+    color: var(--color-primary);
+  }
 }
 
 .toggle-icon {
   font-size: 0.9rem;
-  color: #42b983;
+  color: var(--color-primary);
+  transition: transform var(--transition-base);
 }
 
 .advanced-controls {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
 }
 
 .control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  @include control-group;
 }
 
 label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
+  @include label-base;
 }
 
 .checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-}
+  @include label-inline;
 
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #42b983;
+  input[type="checkbox"] {
+    @include checkbox-base;
+  }
 }
 
 .value-display {
-  float: right;
-  color: #42b983;
+  @include value-display;
 }
 
 .slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #d3d3d3;
-  outline: none;
-  appearance: none;
-}
-
-.slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #42b983;
-  cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #42b983;
-  cursor: pointer;
-  border: none;
+  @include slider-input;
 }
 
 .hint {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #888;
-  font-style: italic;
+  @include hint-text;
 }
 </style>

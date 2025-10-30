@@ -1,0 +1,22 @@
+// ============================================================================
+// Label Mixins
+// ============================================================================
+
+@mixin label-base {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  margin-bottom: var(--spacing-3);
+  font-weight: var(--font-weight-medium);
+}
+
+@mixin label-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  user-select: none;
+}

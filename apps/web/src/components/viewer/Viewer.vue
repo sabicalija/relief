@@ -1,7 +1,7 @@
 <template>
-  <div class="tres-viewer">
+  <div ref="dropZoneRef" class="tres-viewer" :class="{ 'drag-over': isOverDropZone }">
     <!-- Show viewer when depth map exists -->
-    <div v-if="imageStore.depthMap" ref="dropZoneRef" class="viewer-container" :class="{ 'drag-over': isOverDropZone }">
+    <div v-if="imageStore.depthMap" class="viewer-container">
       <Viewer2D v-show="viewMode === '2d'" />
       <Viewer3D v-show="viewMode === '3d'" @update:is-generating="isGenerating = $event" />
 
@@ -10,7 +10,7 @@
     </div>
 
     <!-- Show placeholder when no depth map -->
-    <div v-else ref="dropZoneRef" class="viewer-placeholder-wrapper" :class="{ 'drag-over': isOverDropZone }">
+    <div v-else class="viewer-placeholder-wrapper">
       <ViewerPlaceholder />
     </div>
   </div>
@@ -60,31 +60,24 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
 .tres-viewer {
   width: 100%;
   position: relative;
+  transition: all 0.2s;
+}
+
+.tres-viewer.drag-over {
+  outline: 3px dashed #42b983;
+  outline-offset: 4px;
+  background: rgba(66, 185, 131, 0.05);
 }
 
 .viewer-container {
   width: 100%;
   height: 500px;
   position: relative;
-  transition: all 0.2s;
-}
-
-.viewer-container.drag-over {
-  outline: 3px dashed #42b983;
-  outline-offset: 4px;
-  background: rgba(66, 185, 131, 0.05);
 }
 
 .viewer-placeholder-wrapper {
   width: 100%;
   height: 500px;
   position: relative;
-  transition: all 0.2s;
-}
-
-.viewer-placeholder-wrapper.drag-over {
-  outline: 3px dashed #42b983;
-  outline-offset: 4px;
-  background: rgba(66, 185, 131, 0.05);
 }
 </style>

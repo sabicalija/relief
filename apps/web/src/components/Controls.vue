@@ -63,31 +63,34 @@ import ContourFlattening from "./controls/ContourFlattening.vue";
 const store = useImageStore();
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .controls {
   width: 100%;
   max-width: 1400px;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  margin: var(--spacing-lg) auto;
+  padding: 1.25rem;
+  background-color: var(--color-bg);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
   align-items: start;
-}
 
-.controls.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-  user-select: none;
-}
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    user-select: none;
+  }
 
-.controls h2 {
-  font-size: 1.25rem;
-  color: #2c3e50;
-  margin: 0 0 0.5rem 0;
-  grid-column: 1 / -1;
+  h2 {
+    font-size: var(--font-size-xl);
+    color: var(--color-text);
+    margin: 0 0 var(--spacing-sm) 0;
+    font-weight: var(--font-weight-semibold);
+    grid-column: 1 / -1;
+  }
 }
 
 .dimensions {
@@ -96,7 +99,7 @@ const store = useImageStore();
 
 @media (max-width: 1024px) {
   .controls {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

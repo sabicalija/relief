@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import "./assets/style.css";
-import "./styles/vars.scss"; // Import global CSS custom properties
+import "./styles/core/vars.scss"; // Import global CSS custom properties
 import App from "./App.vue";
 import iconsPlugin from "./plugins/icons";
 

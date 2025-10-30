@@ -1,0 +1,49 @@
+// ============================================================================
+// Control Utility Mixins
+// Common patterns used across control components
+// ============================================================================
+
+@use "./buttons" as *;
+
+@mixin control-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+@mixin section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-6);
+  padding: var(--spacing-6);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border-section);
+  border-radius: var(--radius-md);
+}
+
+@mixin value-display {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+@mixin hint-text {
+  font-size: var(--spacing-6);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  text-align: left;
+}
+
+@mixin toggle-button {
+  @include btn-icon;
+  font-size: var(--font-size-md);
+}
+
+@mixin toggle-icon {
+  transition: transform var(--transition-base);
+  display: inline-block;
+  
+  &.collapsed {
+    transform: rotate(-90deg);
+  }
+}

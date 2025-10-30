@@ -93,11 +93,15 @@ const resolutionPresets = computed(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "../../styles/controls/buttons" as *;
+@use "../../styles/controls/forms" as *;
+@use "../../styles/controls/labels" as *;
+
 .control-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-xs);
 }
 
 .resolution-control {
@@ -105,55 +109,46 @@ const resolutionPresets = computed(() => {
 }
 
 label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
+  @include label-base;
 }
 
 .resolution-display {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--spacing-lg);
   align-items: center;
   flex-wrap: wrap;
 }
 
 .resolution-info {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   align-items: center;
 }
 
 .resolution-scale {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   align-items: center;
-  margin-left: 1rem;
+  margin-left: var(--spacing-md);
 }
 
 .resolution-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
+  @include label-base;
+  display: inline;
 }
 
-.resolution-value {
-  font-size: 1rem;
-  font-weight: 500;
+.resolution-value,
+.resolution-value-editable {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
   font-family: "Courier New", monospace;
-  color: #42b983;
-  background-color: rgba(66, 185, 131, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  padding: 0.25rem var(--spacing-sm);
+  border-radius: var(--radius-sm);
 }
 
 .resolution-value-editable {
-  font-size: 1rem;
-  font-weight: 500;
-  font-family: "Courier New", monospace;
-  color: #42b983;
-  background-color: rgba(66, 185, 131, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
   display: flex;
   align-items: center;
   gap: 0;
@@ -162,57 +157,36 @@ label {
 .resolution-input {
   width: 70px;
   padding: 0.1rem 0.3rem;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
   font-family: "Courier New", monospace;
-  color: #42b983;
+  color: var(--color-primary);
   background-color: transparent;
   border: none;
-  border-bottom: 2px solid #42b983;
+  border-bottom: var(--input-border-width) solid var(--color-primary);
   border-radius: 0;
   outline: none;
   text-align: center;
-  transition: border-color 0.2s;
-}
+  transition: border-color var(--transition-base), background-color var(--transition-base);
 
-.resolution-input:focus {
-  border-bottom-color: #2c3e50;
-  background-color: rgba(66, 185, 131, 0.15);
+  &:focus {
+    border-bottom-color: var(--color-text);
+    background-color: rgba(66, 185, 131, 0.15);
+  }
 }
 
 .resolution-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
 .btn-preset {
-  padding: 0.35rem 0.7rem;
-  background-color: #e9ecef;
-  color: #2c3e50;
-  border: 2px solid #d3d3d3;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-preset:hover {
-  background-color: #dee2e6;
-  border-color: #42b983;
-}
-
-.btn-preset.active {
-  background-color: #42b983;
-  color: white;
-  border-color: #42b983;
+  @include btn-preset;
 }
 
 .hint {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #888;
-  font-style: italic;
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.6);
 }
 </style>

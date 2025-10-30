@@ -44,50 +44,26 @@ const setValue = (value) => {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use "../../styles/controls/buttons" as *;
+@use "../../styles/controls/forms" as *;
+@use "../../styles/controls/labels" as *;
+@use "../../styles/controls/utilities" as *;
+
 .control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  @include control-group;
 }
 
 label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
+  @include label-base;
 }
 
 .value-display {
-  float: right;
-  font-weight: 600;
-  color: #42b983;
+  @include value-display;
 }
 
 .slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #d3d3d3;
-  outline: none;
-  appearance: none;
-}
-
-.slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #42b983;
-  cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #42b983;
-  cursor: pointer;
-  border: none;
+  @include slider-input;
 }
 
 .presets {
@@ -97,32 +73,10 @@ label {
 }
 
 .btn-preset {
-  padding: 0.35rem 0.7rem;
-  background-color: #e9ecef;
-  color: #2c3e50;
-  border: 2px solid #d3d3d3;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-preset:hover {
-  background-color: #dee2e6;
-  border-color: #42b983;
-}
-
-.btn-preset.active {
-  background-color: #42b983;
-  color: white;
-  border-color: #42b983;
+  @include btn-preset;
 }
 
 .hint {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #888;
-  font-style: italic;
+  @include hint-text;
 }
 </style>

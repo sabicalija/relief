@@ -1,0 +1,61 @@
+// ============================================================================
+// Overlay Mixins
+// ============================================================================
+
+@mixin overlay-base {
+  position: absolute;
+  z-index: var(--z-overlay);
+  pointer-events: auto;
+}
+
+@mixin overlay-position($vertical, $horizontal) {
+  #{$vertical}: var(--spacing-md);
+  #{$horizontal}: var(--spacing-md);
+}
+
+@mixin overlay-top-left {
+  @include overlay-base;
+  top: var(--spacing-6);
+  left: var(--spacing-md);
+}
+
+@mixin overlay-top-right {
+  @include overlay-base;
+  top: var(--spacing-6);
+  right: var(--spacing-md);
+}
+
+@mixin overlay-bottom-left {
+  @include overlay-base;
+  @include overlay-position(bottom, left);
+}
+
+@mixin overlay-bottom-right {
+  @include overlay-base;
+  @include overlay-position(bottom, right);
+}
+
+@mixin overlay-light {
+  background-color: var(--overlay-bg-light);
+  box-shadow: var(--overlay-shadow);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs);
+}
+
+@mixin overlay-dark {
+  background-color: var(--overlay-bg-dark);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+}
+
+// Legacy alias mixins (for backward compatibility)
+@mixin overlay-light-style {
+  @include overlay-light;
+}
+
+@mixin overlay-dark-style {
+  @include overlay-dark;
+}
+
