@@ -20,6 +20,7 @@
     "@vueuse/core": "^14.0.0",
     "pinia": "^3.0.3",
     "three": "^0.180.0",
+    "three-stdlib": "^2.36.0",
     "three-viewport-gizmo": "^2.2.0",
     "vue": "^3.4.0"
   },

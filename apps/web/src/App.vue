@@ -7,8 +7,8 @@
     <p class="attribution">Austrian Proverb</p>
     <Upload />
     <Controls />
-    <div class="viewer-container">
-      <TresViewer />
+    <div class="viewer-wrapper">
+      <Viewer />
     </div>
     <DemoGallery />
   </div>
@@ -17,7 +17,7 @@
 <script setup>
 import Upload from "./components/Upload.vue";
 import Controls from "./components/Controls.vue";
-import TresViewer from "./components/TresViewer.vue";
+import Viewer from "./components/viewer/Viewer.vue";
 import DemoGallery from "./components/DemoGallery.vue";
 </script>
 
@@ -58,22 +58,11 @@ h1 {
   font-weight: 600;
 }
 
-.viewer-container {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  align-items: flex-start;
+.viewer-wrapper {
   margin-top: 2rem;
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
-  min-height: 600px;
-}
-
-@media (max-width: 1024px) {
-  .viewer-container {
-    flex-direction: column;
-  }
 }
 </style>
