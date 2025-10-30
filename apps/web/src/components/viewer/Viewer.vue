@@ -1,7 +1,5 @@
 <template>
   <div class="tres-viewer">
-    <h2>{{ viewMode === "2d" ? "Depth Map" : "3D Preview" }}</h2>
-
     <!-- Show viewer when depth map exists -->
     <div v-if="imageStore.depthMap" ref="dropZoneRef" class="viewer-container" :class="{ 'drag-over': isOverDropZone }">
       <Viewer2D v-show="viewMode === '2d'" />
@@ -62,12 +60,6 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
 .tres-viewer {
   width: 100%;
   position: relative;
-}
-
-h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-  color: #2c3e50;
 }
 
 .viewer-container {
