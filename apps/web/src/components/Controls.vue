@@ -1,403 +1,66 @@
 <template>
-  <div class="controls" :class="{ disabled: !imageStore.depthMap }">
+  <div class="controls" :class="{ disabled: !store.depthMap }">
     <h2>STL Parameters</h2>
 
-    <div class="control-group">
-      <label for="target-depth">Depth (mm)</label>
-      <input
-        id="target-depth"
-        type="number"
-        min="0.1"
-        step="0.1"
-        :value="imageStore.targetDepthMm"
-        @input="handleDepthChange"
-        class="number-input"
-      />
-      <p class="hint">Maximum depth of the relief from surface to lowest point.</p>
-    </div>
+    <!-- Basic Parameters -->
+    <NumberInput
+      v-model="store.targetDepthMm"
+      label="Depth (mm)"
+      :min="0.1"
+      :step="0.1"
+      hint="Maximum depth of the relief from surface to lowest point."
+      @update:model-value="store.setTargetDepthMm"
+    />
 
-    <div class="control-group">
-      <label for="base-thickness">Base Thickness (mm)</label>
-      <input
-        id="base-thickness"
-        type="number"
-        min="0"
-        step="0.1"
-        :value="imageStore.baseThicknessMm"
-        @input="handleBaseThicknessChange"
-        class="number-input"
-      />
-      <p class="hint">Solid base thickness for 3D printing stability.</p>
-    </div>
+    <NumberInput
+      v-model="store.baseThicknessMm"
+      label="Base Thickness (mm)"
+      :min="0"
+      :step="0.1"
+      hint="Solid base thickness for 3D printing stability."
+      @update:model-value="store.setBaseThicknessMm"
+    />
 
+    <!-- Dimensions -->
     <div class="dimensions">
-      <div class="control-group">
-        <label for="target-width">Width (mm)</label>
-        <input
-          id="target-width"
-          type="number"
-          min="1"
-          :value="imageStore.targetWidthMm"
-          @input="handleWidthChange"
-          placeholder="Auto"
-          class="number-input"
-        />
-      </div>
-
-      <div class="control-group">
-        <label for="target-height">Height (mm)</label>
-        <input
-          id="target-height"
-          type="number"
-          min="1"
-          :value="imageStore.targetHeightMm"
-          @input="handleHeightChange"
-          placeholder="Auto"
-          class="number-input"
-        />
-      </div>
-    </div>
-
-    <div class="control-group resolution-control">
-      <label>Resolution</label>
-      <div class="resolution-display">
-        <div class="resolution-info">
-          <span class="resolution-label">Source:</span>
-          <span class="resolution-value">{{ sourceResolution }} px</span>
-        </div>
-        <div class="resolution-info">
-          <span class="resolution-label">Target:</span>
-          <span class="resolution-value-editable">
-            {{ targetResolutionPrefix }}×<input
-              type="number"
-              :min="minResolutionAllowed"
-              :max="maxDimension"
-              step="1"
-              :value="imageStore.maxResolution"
-              @input="handleResolutionChange"
-              class="resolution-input"
-            />
-            px
-          </span>
-        </div>
-        <div class="resolution-scale">
-          <span class="resolution-label">Scale:</span>
-          <div class="resolution-buttons">
-            <button
-              v-for="preset in resolutionPresets"
-              :key="preset.value"
-              @click="setResolution(preset.value)"
-              :class="{ active: imageStore.maxResolution === preset.value }"
-              class="btn-preset"
-            >
-              {{ preset.label }}
-            </button>
-          </div>
-        </div>
-      </div>
-      <p class="hint">Click a ratio preset to adjust mesh resolution. Lower values improve performance.</p>
-    </div>
-
-    <div class="control-group">
-      <label for="simplification">
-        Simplification
-        <span class="simplification-value">{{ (localSimplificationRatio * 100).toFixed(0) }}%</span>
-      </label>
-      <input
-        id="simplification"
-        type="range"
-        min="0.01"
-        max="1"
-        step="0.01"
-        v-model.number="localSimplificationRatio"
-        @change="handleSimplificationChange"
-        class="slider"
+      <NumberInput
+        v-model="store.targetWidthMm"
+        label="Width (mm)"
+        :min="1"
+        placeholder="Auto"
+        @update:model-value="store.setTargetWidthMm"
       />
-      <div class="simplification-presets">
-        <button
-          v-for="preset in simplificationPresets"
-          :key="preset"
-          @click="setSimplification(preset)"
-          :class="{ active: Math.abs(localSimplificationRatio - preset) < 0.01 }"
-          class="btn-preset"
-        >
-          {{ (preset * 100).toFixed(0) }}%
-        </button>
-      </div>
-      <p class="hint">
-        Reduce mesh complexity for smaller file sizes. Works by scaling down the effective resolution. 50% = half
-        resolution, 10% = 1/10th resolution. Fast and responsive at any level.
-      </p>
+
+      <NumberInput
+        v-model="store.targetHeightMm"
+        label="Height (mm)"
+        :min="1"
+        placeholder="Auto"
+        @update:model-value="store.setTargetHeightMm"
+      />
     </div>
 
-    <div class="advanced-section">
-      <h3 class="section-title">
-        <button @click="toggleAdvanced" class="toggle-btn">
-          <span class="toggle-icon">{{ showAdvanced ? "▼" : "▶" }}</span>
-          Advanced Depth Enhancement
-        </button>
-      </h3>
+    <!-- Resolution Control -->
+    <ResolutionControl />
 
-      <div v-if="showAdvanced" class="advanced-controls">
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="imageStore.enhanceDetails" class="checkbox-input" />
-            <span>Enable Detail Enhancement</span>
-          </label>
-          <p class="hint">Emphasize fine details while preserving major features for better 3D printing.</p>
-        </div>
+    <!-- Simplification -->
+    <SimplificationSlider />
 
-        <div v-if="imageStore.enhanceDetails" class="enhancement-options">
-          <div class="control-group">
-            <label for="enhancement-strength">
-              Enhancement Strength
-              <span class="value-display">{{ imageStore.detailEnhancementStrength.toFixed(1) }}</span>
-            </label>
-            <input
-              id="enhancement-strength"
-              type="range"
-              min="1.0"
-              max="5.0"
-              step="0.1"
-              v-model.number="imageStore.detailEnhancementStrength"
-              @input="handleEnhancementStrengthChange"
-              class="slider"
-            />
-            <p class="hint">How much to enhance fine details (1.0 = no enhancement, higher = more detail).</p>
-          </div>
-
-          <div class="control-group">
-            <label for="detail-threshold">
-              Detail Threshold
-              <span class="value-display">{{ imageStore.detailThreshold.toFixed(2) }}</span>
-            </label>
-            <input
-              id="detail-threshold"
-              type="range"
-              min="0.0"
-              max="1.0"
-              step="0.01"
-              v-model.number="imageStore.detailThreshold"
-              @input="handleDetailThresholdChange"
-              class="slider"
-            />
-            <p class="hint">What counts as "fine detail" vs "major feature" (lower = more sensitive).</p>
-          </div>
-
-          <div class="control-group">
-            <label for="smoothing-kernel">
-              Smoothing Kernel Size
-              <span class="value-display">{{ imageStore.smoothingKernelSize }}</span>
-            </label>
-            <input
-              id="smoothing-kernel"
-              type="range"
-              min="1"
-              max="15"
-              step="2"
-              v-model.number="imageStore.smoothingKernelSize"
-              @input="handleSmoothingKernelChange"
-              class="slider"
-            />
-            <p class="hint">Noise reduction before enhancement (1 = none, higher = more smoothing).</p>
-          </div>
-
-          <div class="control-group">
-            <label>
-              <input type="checkbox" v-model="imageStore.preserveMajorFeatures" class="checkbox-input" />
-              <span>Preserve Major Features</span>
-            </label>
-            <p class="hint">Keep large depth differences intact while enhancing fine details.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="advanced-section">
-      <h3 class="section-title">
-        <button @click="toggleContour" class="toggle-btn">
-          <span class="toggle-icon">{{ showContour ? "▼" : "▶" }}</span>
-          Contour Flattening
-        </button>
-      </h3>
-
-      <div v-if="showContour" class="advanced-controls">
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="imageStore.enableContour" class="checkbox-input" />
-            <span>Enable Contour</span>
-          </label>
-          <p class="hint">Flatten all vertices above the threshold to create a flat top surface.</p>
-        </div>
-
-        <div v-if="imageStore.enableContour" class="contour-options">
-          <div class="control-group">
-            <label for="contour-threshold">
-              Threshold
-              <span class="value-display">{{ (imageStore.contourThreshold * 100).toFixed(0) }}%</span>
-            </label>
-            <input
-              id="contour-threshold"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              :value="imageStore.contourThreshold"
-              @input="handleContourThresholdChange"
-              class="slider"
-            />
-            <p class="hint">
-              Depth threshold (0-100%). Vertices above this height will be flattened to the maximum depth.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Advanced Sections -->
+    <DepthEnhancement />
+    <ContourFlattening />
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
-import { useDebounceFn } from "@vueuse/core";
 import { useImageStore } from "../stores/image";
+import NumberInput from "./controls/NumberInput.vue";
+import ResolutionControl from "./controls/ResolutionControl.vue";
+import SimplificationSlider from "./controls/SimplificationSlider.vue";
+import DepthEnhancement from "./controls/DepthEnhancement.vue";
+import ContourFlattening from "./controls/ContourFlattening.vue";
 
-const imageStore = useImageStore();
-
-// Local state for simplification slider (updates immediately for smooth UI)
-const localSimplificationRatio = ref(1.0);
-
-// State for advanced settings toggle
-const showAdvanced = ref(false);
-const showContour = ref(false);
-
-// Initialize from store
-localSimplificationRatio.value = imageStore.simplificationRatio;
-
-const toggleAdvanced = () => {
-  showAdvanced.value = !showAdvanced.value;
-};
-
-const toggleContour = () => {
-  showContour.value = !showContour.value;
-};
-
-const handleDepthChange = useDebounceFn((event) => {
-  // Validation happens in the store
-  imageStore.setTargetDepthMm(event.target.value);
-}, 500);
-
-const handleBaseThicknessChange = useDebounceFn((event) => {
-  // Validation happens in the store
-  imageStore.setBaseThicknessMm(event.target.value);
-}, 500);
-
-const handleEnhancementStrengthChange = useDebounceFn((event) => {
-  imageStore.setDetailEnhancementStrength(event.target.value);
-}, 300);
-
-const handleContourThresholdChange = useDebounceFn((event) => {
-  imageStore.setContourThreshold(event.target.value);
-}, 300);
-
-const handleDetailThresholdChange = useDebounceFn((event) => {
-  imageStore.setDetailThreshold(event.target.value);
-}, 300);
-
-const handleSmoothingKernelChange = useDebounceFn((event) => {
-  imageStore.setSmoothingKernelSize(event.target.value);
-}, 300);
-
-// Debounced handler for slider change - triggers recalculation after user stops adjusting
-const handleSimplificationChange = useDebounceFn(() => {
-  imageStore.setSimplificationRatio(localSimplificationRatio.value);
-}, 300);
-
-// Direct setter for preset buttons (immediate, no debounce needed)
-const setSimplification = (value) => {
-  localSimplificationRatio.value = value;
-  imageStore.setSimplificationRatio(value);
-};
-
-// Simplification presets (10% to 100%)
-const simplificationPresets = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
-
-// Debounced handlers for width/height inputs - wait for user to finish typing
-const handleWidthChange = useDebounceFn((event) => {
-  imageStore.setTargetWidthMm(event.target.value);
-}, 500);
-
-const handleHeightChange = useDebounceFn((event) => {
-  imageStore.setTargetHeightMm(event.target.value);
-}, 500);
-
-const handleResolutionChange = useDebounceFn((event) => {
-  imageStore.setMaxResolution(event.target.value);
-}, 500);
-
-const setResolution = (value) => {
-  imageStore.setMaxResolution(value);
-};
-
-// Get the maximum dimension from the image
-const maxDimension = computed(() => {
-  if (!imageStore.imageDimensions) return 4032;
-  return Math.max(imageStore.imageDimensions.width, imageStore.imageDimensions.height);
-});
-
-// Minimum resolution allowed (1px for the larger dimension)
-const minResolutionAllowed = computed(() => {
-  return 1;
-});
-
-// Source resolution display
-const sourceResolution = computed(() => {
-  if (!imageStore.imageDimensions) return "N/A";
-  return `${imageStore.imageDimensions.width}×${imageStore.imageDimensions.height}`;
-});
-
-// Target resolution prefix - the calculated dimension that's NOT the maxResolution
-// For 3024×4032 with maxRes=1024 → shows "768"
-const targetResolutionPrefix = computed(() => {
-  if (!imageStore.imageDimensions) return "N/A";
-
-  const { width, height } = imageStore.imageDimensions;
-  const maxRes = imageStore.maxResolution;
-  const maxDim = Math.max(width, height);
-
-  // Calculate the smaller dimension based on aspect ratio
-  const scale = maxRes / maxDim;
-  const targetWidth = Math.floor(width * scale);
-  const targetHeight = Math.floor(height * scale);
-
-  // Return the dimension that's NOT maxResolution
-  // For 3024×4032 with maxRes=1024 → height is larger, so return width (768)
-  if (height > width) {
-    return targetWidth;
-  } else {
-    return targetHeight;
-  }
-});
-
-// Generate resolution presets as ratios based on image size
-const resolutionPresets = computed(() => {
-  const max = maxDimension.value;
-  const presets = [];
-
-  // Generate halvings with ratio labels: 1:1, 1:2, 1:4, 1:8, 1:16, 1:32
-  let current = max;
-  let divisor = 1;
-  while (current >= 128 && presets.length < 6) {
-    const label = divisor === 1 ? "1:1" : `1:${divisor}`;
-    presets.push({
-      label: label,
-      value: Math.round(current),
-    });
-    current = current / 2;
-    divisor = divisor * 2;
-  }
-
-  return presets;
-});
+const store = useImageStore();
 </script>
 
 <style scoped>
@@ -427,267 +90,8 @@ const resolutionPresets = computed(() => {
   grid-column: 1 / -1;
 }
 
-.control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.control-group:last-child {
-  margin-bottom: 0;
-}
-
-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.simplification-value {
-  font-weight: 500;
-  color: #42b983;
-  margin-left: 0.5rem;
-}
-
-.slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #d3d3d3;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.slider::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #42b983;
-  cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #42b983;
-  cursor: pointer;
-  border: none;
-}
-
-.scale-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.hint {
-  margin-top: 0.25rem;
-  font-size: 0.8rem;
-  color: #888;
-  font-style: italic;
-}
-
 .dimensions {
   display: contents;
-}
-
-.number-input {
-  padding: 0.5rem;
-  font-size: 1rem;
-  border: 2px solid #d3d3d3;
-  border-radius: 4px;
-  outline: none;
-  transition: border-color 0.3s;
-}
-
-.number-input:focus {
-  border-color: #42b983;
-}
-
-.number-input::placeholder {
-  color: #999;
-}
-
-.resolution-control {
-  grid-column: 1 / -1;
-}
-
-.resolution-display {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.resolution-info {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.resolution-scale {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-left: 1rem;
-}
-
-.resolution-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.resolution-value {
-  font-size: 1rem;
-  font-weight: 500;
-  font-family: "Courier New", monospace;
-  color: #42b983;
-  background-color: rgba(66, 185, 131, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-}
-
-.resolution-value-editable {
-  font-size: 1rem;
-  font-weight: 500;
-  font-family: "Courier New", monospace;
-  color: #42b983;
-  background-color: rgba(66, 185, 131, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
-.resolution-input {
-  width: 70px;
-  padding: 0.1rem 0.3rem;
-  font-size: 1rem;
-  font-weight: 500;
-  font-family: "Courier New", monospace;
-  color: #42b983;
-  background-color: transparent;
-  border: none;
-  border-bottom: 2px solid #42b983;
-  border-radius: 0;
-  outline: none;
-  text-align: center;
-  transition: border-color 0.2s;
-}
-
-.resolution-input:focus {
-  border-bottom-color: #2c3e50;
-  background-color: rgba(66, 185, 131, 0.15);
-}
-
-.resolution-buttons {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.btn-preset {
-  padding: 0.35rem 0.7rem;
-  background-color: #e9ecef;
-  color: #2c3e50;
-  border: 2px solid #d3d3d3;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-preset:hover {
-  background-color: #dee2e6;
-  border-color: #42b983;
-}
-
-.btn-preset.active {
-  background-color: #42b983;
-  color: white;
-  border-color: #42b983;
-}
-
-.simplification-presets {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-
-.advanced-section {
-  grid-column: 1 / -1;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid #e9ecef;
-}
-
-.section-title {
-  margin: 0 0 1rem 0;
-}
-
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c3e50;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.toggle-btn:hover {
-  color: #42b983;
-}
-
-.toggle-icon {
-  font-size: 0.9rem;
-  color: #42b983;
-  transition: transform 0.2s;
-}
-
-.advanced-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.enhancement-options {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-left: 1.5rem;
-  border-left: 3px solid #42b983;
-  margin-top: 0.5rem;
-}
-
-.checkbox-input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #42b983;
-  margin-right: 0.5rem;
-}
-
-.value-display {
-  float: right;
-  font-weight: 600;
-  color: #42b983;
-  font-size: 0.9rem;
 }
 
 @media (max-width: 1024px) {
