@@ -6,10 +6,18 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 // Import icons
-import { faSpinner, faImage } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSpinner,
+  faImage,
+  faArrowsUpDownLeftRight,
+  faRotate,
+  faMaximize,
+  faCheck,
+  faExclamationTriangle,
+} from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
-library.add(faSpinner, faImage);
+library.add(faSpinner, faImage, faArrowsUpDownLeftRight, faRotate, faMaximize, faCheck, faExclamationTriangle);
 
 /**
  * Install FontAwesome plugin
