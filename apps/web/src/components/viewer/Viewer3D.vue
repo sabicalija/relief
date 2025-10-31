@@ -2,7 +2,7 @@
   <div class="viewer-3d">
     <TresCanvas v-bind="canvasProps">
       <TresPerspectiveCamera :position="[0, 150, 150]" :make-default="true" />
-      <OrbitControls />
+      <OrbitControls ref="orbitControlsRef" make-default />
 
       <TresAmbientLight :intensity="1.5" />
       <TresDirectionalLight :position="[1, 1, 1]" :intensity="1" />
@@ -14,27 +14,37 @@
       <!-- Render mesh when available -->
       <primitive v-if="mesh" :object="mesh" />
 
+      <!-- Transform controls for manipulating the mesh (only when mode is active) -->
+      <TransformControls v-if="mesh && transformMode" ref="transformControlsRef" :object="mesh" :mode="transformMode" />
+
       <!-- Gizmo setup component -->
       <GizmoSetup />
     </TresCanvas>
 
-    <!-- Loading overlay -->
-    <Viewer3DOverlay :is-generating="isGenerating" />
+    <!-- Transform controls overlay (top-left) -->
+    <Viewer3DOverlay :show-transform-controls="!!mesh" v-model:transform-mode="transformMode" />
+
+    <!-- Status indicator (bottom-left) -->
+    <Viewer3DStatusIndicator />
   </div>
 </template>
 
 <script setup>
 import { TresCanvas } from "@tresjs/core";
-import { OrbitControls } from "@tresjs/cientos";
+import { OrbitControls, TransformControls } from "@tresjs/cientos";
 import { reactive, watch, ref, markRaw } from "vue";
 import { useImageStore } from "../../stores/image";
+import { useViewerStatusStore } from "../../stores/viewerStatus";
 import { createMeshFromDepthMap } from "../../utils/mesh/index.js";
 import Viewer3DOverlay from "./Viewer3DOverlay.vue";
+import Viewer3DStatusIndicator from "./Viewer3DStatusIndicator.vue";
 import GizmoSetup from "./GizmoSetup.vue";
 
 const imageStore = useImageStore();
+const statusStore = useViewerStatusStore();
 const mesh = ref(null);
 const isGenerating = ref(false);
+const transformMode = ref("translate");
 
 // Canvas configuration
 const canvasProps = reactive({
@@ -53,30 +63,33 @@ watch(
     }
 
     isGenerating.value = true;
+    const statusId = statusStore.showGenerating("Generating 3D mesh...");
     console.log("🔄 Generating mesh from depth map...");
 
     try {
       const effectiveResolution = Math.max(10, Math.floor(imageStore.maxResolution * imageStore.simplificationRatio));
 
-      const config = {
-        targetDepthMm: imageStore.targetDepthMm,
-        baseThicknessMm: imageStore.baseThicknessMm,
-        targetWidthMm: imageStore.targetWidthMm,
-        targetHeightMm: imageStore.targetHeightMm,
-        maxResolution: effectiveResolution,
-        showTexture: imageStore.showTexture,
-        textureMap: imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : null,
-        baseColor: imageStore.baseColor,
-        enhanceDetails: imageStore.enhanceDetails,
-        detailEnhancementStrength: imageStore.detailEnhancementStrength,
-        detailThreshold: imageStore.detailThreshold,
-        preserveMajorFeatures: imageStore.preserveMajorFeatures,
-        smoothingKernelSize: imageStore.smoothingKernelSize,
-        enableContour: imageStore.enableContour,
-        contourThreshold: imageStore.contourThreshold,
-      };
-
-      const newMesh = await createMeshFromDepthMap(newDepthMap, config);
+      // Ensure minimum display time for status message
+      const [newMesh] = await Promise.all([
+        createMeshFromDepthMap(newDepthMap, {
+          targetDepthMm: imageStore.targetDepthMm,
+          baseThicknessMm: imageStore.baseThicknessMm,
+          targetWidthMm: imageStore.targetWidthMm,
+          targetHeightMm: imageStore.targetHeightMm,
+          maxResolution: effectiveResolution,
+          showTexture: imageStore.showTexture,
+          textureMap: imageStore.useCustomTexture && imageStore.textureMap ? imageStore.textureMap : null,
+          baseColor: imageStore.baseColor,
+          enhanceDetails: imageStore.enhanceDetails,
+          detailEnhancementStrength: imageStore.detailEnhancementStrength,
+          detailThreshold: imageStore.detailThreshold,
+          preserveMajorFeatures: imageStore.preserveMajorFeatures,
+          smoothingKernelSize: imageStore.smoothingKernelSize,
+          enableContour: imageStore.enableContour,
+          contourThreshold: imageStore.contourThreshold,
+        }),
+        new Promise((resolve) => setTimeout(resolve, 300)), // Minimum 300ms display
+      ]);
 
       // Dispose old mesh completely
       if (mesh.value) {
@@ -116,8 +129,12 @@ watch(
       // Use markRaw to prevent Vue from making Three.js objects reactive
       mesh.value = markRaw(newMesh);
       console.log("✅ Mesh generated successfully");
+      statusStore.removeStatus(statusId);
+      statusStore.showSuccess("Mesh generated successfully", 2000);
     } catch (error) {
       console.error("❌ Error generating mesh:", error);
+      statusStore.removeStatus(statusId);
+      statusStore.showError(`Error generating mesh: ${error.message}`, 5000);
     } finally {
       isGenerating.value = false;
     }

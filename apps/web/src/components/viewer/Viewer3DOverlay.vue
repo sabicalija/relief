@@ -1,19 +1,25 @@
 <template>
   <div class="viewer-3d-overlay">
-    <!-- Loading indicator -->
-    <div v-if="isGenerating" class="loading-indicator">
-      <font-awesome-icon icon="spinner" spin />
-      <span>Generating...</span>
+    <!-- Transform mode selector (top-right, below viewport gizmo) -->
+    <div v-if="showTransformControls" class="overlay-top-right">
+      <TransformModeSelector v-model="transformMode" />
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
-  isGenerating: {
+import TransformModeSelector from "./3d/TransformModeSelector.vue";
+
+const props = defineProps({
+  showTransformControls: {
     type: Boolean,
-    required: true,
+    default: false,
   },
+});
+
+const transformMode = defineModel("transformMode", {
+  type: String,
+  default: "translate",
 });
 </script>
 
@@ -21,18 +27,12 @@ defineProps({
 @use "@/styles/layout/overlays.scss" as overlays;
 
 .viewer-3d-overlay {
-  @include overlays.overlay-base;
-  @include overlays.overlay-top-right;
+  // Pass-through container - no positioning
   pointer-events: none;
 }
 
-.loading-indicator {
-  color: rgba(0, 0, 0, 0.7);
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  pointer-events: auto;
+.overlay-top-right {
+  @include overlays.overlay-top-right;
+  z-index: 100; // Above canvas
 }
 </style>
