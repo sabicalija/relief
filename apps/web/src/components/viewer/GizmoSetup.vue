@@ -56,7 +56,13 @@ onRender(() => {
 watch(
   context.camera.activeCamera,
   (newCamera) => {
-    if (newCamera && context.renderer?.instance && !viewportGizmo.value) {
+    if (newCamera && context.renderer?.instance) {
+      // Dispose old gizmo if it exists
+      if (viewportGizmo.value) {
+        viewportGizmo.value.dispose();
+        viewportGizmo.value = null;
+      }
+      // Initialize new gizmo with the new camera
       initGizmo();
     }
   },

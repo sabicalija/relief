@@ -1,7 +1,24 @@
 <template>
   <div class="viewer-3d">
     <TresCanvas v-bind="canvasProps">
-      <TresPerspectiveCamera :position="[0, 150, 150]" :make-default="true" />
+      <TresPerspectiveCamera
+        v-if="projectionMode === 'perspective'"
+        ref="perspectiveCameraRef"
+        :position="cameraPosition"
+        :make-default="true"
+      />
+      <TresOrthographicCamera
+        v-if="projectionMode === 'orthographic'"
+        ref="orthographicCameraRef"
+        :position="cameraPosition"
+        :left="orthoFrustum.left"
+        :right="orthoFrustum.right"
+        :top="orthoFrustum.top"
+        :bottom="orthoFrustum.bottom"
+        :near="0.1"
+        :far="2000"
+        :make-default="true"
+      />
       <OrbitControls ref="orbitControlsRef" make-default />
 
       <TresAmbientLight :intensity="1.5" />
@@ -27,10 +44,17 @@
 
       <!-- Gizmo setup component -->
       <GizmoSetup />
+
+      <!-- Camera aspect ratio sync -->
+      <CameraAspectSync v-model:canvas-aspect="canvasAspect" />
     </TresCanvas>
 
     <!-- Transform controls overlay (top-left) -->
-    <Viewer3DOverlay :show-transform-controls="!!mesh" v-model:transform-mode="transformMode" />
+    <Viewer3DOverlay
+      :show-transform-controls="!!mesh"
+      v-model:transform-mode="transformMode"
+      v-model:projection-mode="projectionMode"
+    />
 
     <!-- Status indicator (bottom-left) -->
     <Viewer3DStatusIndicator />
@@ -40,7 +64,7 @@
 <script setup>
 import { TresCanvas } from "@tresjs/core";
 import { OrbitControls, TransformControls } from "@tresjs/cientos";
-import { reactive, watch, ref, markRaw } from "vue";
+import { reactive, watch, ref, markRaw, computed, nextTick } from "vue";
 import { useImageStore } from "../../stores/image";
 import { useViewerStatusStore } from "../../stores/viewerStatus";
 import { createMeshFromDepthMap } from "../../utils/mesh/index.js";
@@ -48,18 +72,55 @@ import Viewer3DOverlay from "./Viewer3DOverlay.vue";
 import Viewer3DStatusIndicator from "./Viewer3DStatusIndicator.vue";
 import MeshMeasurements from "./3d/MeshMeasurements.vue";
 import GizmoSetup from "./GizmoSetup.vue";
+import CameraAspectSync from "./CameraAspectSync.vue";
 
 const imageStore = useImageStore();
 const statusStore = useViewerStatusStore();
 const mesh = ref(null);
 const isGenerating = ref(false);
 const transformMode = ref("translate");
+const projectionMode = ref("perspective");
+const perspectiveCameraRef = ref(null);
+const orthographicCameraRef = ref(null);
+const orbitControlsRef = ref(null);
+
+// Camera state preservation
+const cameraPosition = ref([0, 150, 150]);
+const cameraQuaternion = ref(null);
+
+// Orthographic camera frustum (dynamically calculated based on aspect ratio)
+const orthoFrustumSize = 150; // Base size for height
+const canvasAspect = ref(1); // Will be updated based on canvas dimensions
+const orthoFrustum = computed(() => {
+  const aspect = canvasAspect.value;
+  return {
+    left: -orthoFrustumSize * aspect,
+    right: orthoFrustumSize * aspect,
+    top: orthoFrustumSize,
+    bottom: -orthoFrustumSize,
+  };
+});
 
 // Canvas configuration
 const canvasProps = reactive({
   clearColor: "#f0f0f0",
   antialias: true,
   alpha: false,
+});
+
+// Watch for projection mode changes and save camera state
+watch(projectionMode, async (newMode, oldMode) => {
+  // Save current camera position and rotation before switch
+  const currentCameraRef = oldMode === "perspective" ? perspectiveCameraRef : orthographicCameraRef;
+  if (currentCameraRef.value) {
+    const cam = currentCameraRef.value;
+    cameraPosition.value = [cam.position.x, cam.position.y, cam.position.z];
+  }
+
+  // Trigger aspect ratio recalculation after camera switch
+  await nextTick();
+  // Force a small update to trigger aspect recalculation
+  canvasAspect.value = canvasAspect.value || 1;
 });
 
 // Watch for depth map changes

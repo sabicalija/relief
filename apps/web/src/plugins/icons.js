@@ -14,10 +14,22 @@ import {
   faMaximize,
   faCheck,
   faExclamationTriangle,
+  faCube,
+  faSquare,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
-library.add(faSpinner, faImage, faArrowsUpDownLeftRight, faRotate, faMaximize, faCheck, faExclamationTriangle);
+library.add(
+  faSpinner,
+  faImage,
+  faArrowsUpDownLeftRight,
+  faRotate,
+  faMaximize,
+  faCheck,
+  faExclamationTriangle,
+  faCube,
+  faSquare
+);
 
 /**
  * Install FontAwesome plugin
