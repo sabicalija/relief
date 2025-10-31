@@ -17,6 +17,14 @@
       <!-- Transform controls for manipulating the mesh (only when mode is active) -->
       <TransformControls v-if="mesh && transformMode" ref="transformControlsRef" :object="mesh" :mode="transformMode" />
 
+      <!-- Measurement indicators -->
+      <MeshMeasurements
+        v-if="mesh"
+        :mesh="mesh"
+        :target-width-mm="imageStore.targetWidthMm"
+        :target-height-mm="imageStore.targetHeightMm"
+      />
+
       <!-- Gizmo setup component -->
       <GizmoSetup />
     </TresCanvas>
@@ -38,6 +46,7 @@ import { useViewerStatusStore } from "../../stores/viewerStatus";
 import { createMeshFromDepthMap } from "../../utils/mesh/index.js";
 import Viewer3DOverlay from "./Viewer3DOverlay.vue";
 import Viewer3DStatusIndicator from "./Viewer3DStatusIndicator.vue";
+import MeshMeasurements from "./3d/MeshMeasurements.vue";
 import GizmoSetup from "./GizmoSetup.vue";
 
 const imageStore = useImageStore();
