@@ -26,11 +26,11 @@ defineProps({
   },
   targetWidthMm: {
     type: Number,
-    required: true,
+    default: null,
   },
   targetHeightMm: {
     type: Number,
-    required: true,
+    default: null,
   },
 });
 </script>
