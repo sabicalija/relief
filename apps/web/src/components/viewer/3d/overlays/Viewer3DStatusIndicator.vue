@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { useViewerStatusStore } from "../../stores/viewerStatus";
+import { useViewerStatusStore } from "../../../../stores/viewerStatus";
 
 const statusStore = useViewerStatusStore();
 </script>

@@ -13,8 +13,8 @@
 </template>
 
 <script setup>
-import TransformModeSelector from "./3d/TransformModeSelector.vue";
-import ProjectionModeSelector from "./3d/ProjectionModeSelector.vue";
+import TransformModeSelector from "../controls/TransformModeSelector.vue";
+import ProjectionModeSelector from "../controls/ProjectionModeSelector.vue";
 
 const props = defineProps({
   showTransformControls: {

@@ -1,0 +1,133 @@
+/**
+ * Mesh Generation Composable
+ * Manages 3D mesh lifecycle: generation, disposal, and reactive updates
+ */
+import { ref, watch, markRaw } from "vue";
+import { createMeshFromDepthMap } from "../utils/mesh/index.js";
+
+/**
+ * Dispose a Three.js mesh and all its resources (geometry, materials, textures)
+ * @param {THREE.Mesh} meshToDispose - The mesh to dispose
+ */
+function disposeMesh(meshToDispose) {
+  if (!meshToDispose) return;
+
+  // Remove from scene
+  if (meshToDispose.parent) {
+    meshToDispose.parent.remove(meshToDispose);
+  }
+
+  // Dispose geometry
+  if (meshToDispose.geometry) {
+    meshToDispose.geometry.dispose();
+  }
+
+  // Dispose materials and textures
+  if (meshToDispose.material) {
+    const materials = Array.isArray(meshToDispose.material) ? meshToDispose.material : [meshToDispose.material];
+    materials.forEach((m) => {
+      // Dispose all textures
+      if (m.map) m.map.dispose();
+      if (m.normalMap) m.normalMap.dispose();
+      if (m.roughnessMap) m.roughnessMap.dispose();
+      if (m.metalnessMap) m.metalnessMap.dispose();
+      // Dispose material
+      m.dispose();
+    });
+  }
+}
+
+/**
+ * Composable for mesh generation and lifecycle management
+ * @param {Object} options - Configuration options
+ * @param {import('vue').Ref} options.depthMap - Reactive ref to depth map data URL
+ * @param {import('vue').ComputedRef} options.meshConfig - Computed mesh configuration
+ * @param {Object} options.statusStore - Status store for notifications
+ * @returns {Object} Mesh state and methods
+ */
+export function useMeshGeneration({ depthMap, meshConfig, statusStore }) {
+  const mesh = ref(null);
+  const isGenerating = ref(false);
+
+  /**
+   * Generate mesh from depth map with status notifications
+   * @param {string} depthMapData - Depth map data URL
+   * @param {Object} config - Mesh configuration
+   * @param {boolean} showStatusMessages - Whether to show status notifications
+   */
+  async function generateMesh(depthMapData, config, showStatusMessages = true) {
+    if (!depthMapData) {
+      mesh.value = null;
+      return;
+    }
+
+    isGenerating.value = true;
+    let statusId = null;
+
+    if (showStatusMessages) {
+      statusId = statusStore.showGenerating("Generating 3D mesh...");
+      console.log("🔄 Generating mesh from depth map...");
+    } else {
+      console.log("🔄 Regenerating mesh due to parameter change...");
+    }
+
+    try {
+      let newMesh;
+
+      if (showStatusMessages) {
+        // Ensure minimum display time for status message (initial generation)
+        [newMesh] = await Promise.all([
+          createMeshFromDepthMap(depthMapData, config),
+          new Promise((resolve) => setTimeout(resolve, 300)), // Minimum 300ms display
+        ]);
+      } else {
+        // No minimum delay for parameter changes (faster feedback)
+        newMesh = await createMeshFromDepthMap(depthMapData, config);
+      }
+
+      // Dispose old mesh completely
+      disposeMesh(mesh.value);
+
+      // Use markRaw to prevent Vue from making Three.js objects reactive
+      mesh.value = markRaw(newMesh);
+
+      if (showStatusMessages) {
+        console.log("✅ Mesh generated successfully");
+        statusStore.removeStatus(statusId);
+        statusStore.showSuccess("Mesh generated successfully", 2000);
+      } else {
+        console.log("✅ Mesh regenerated successfully");
+      }
+    } catch (error) {
+      console.error("❌ Error generating mesh:", error);
+      if (showStatusMessages) {
+        statusStore.removeStatus(statusId);
+        statusStore.showError(`Error generating mesh: ${error.message}`, 5000);
+      }
+    } finally {
+      isGenerating.value = false;
+    }
+  }
+
+  // Watch for depth map changes (initial generation)
+  watch(
+    depthMap,
+    async (newDepthMap) => {
+      await generateMesh(newDepthMap, meshConfig.value, true);
+    },
+    { immediate: true }
+  );
+
+  // Watch for parameter changes (regeneration without new depth map)
+  watch(meshConfig, async (newConfig) => {
+    if (!depthMap.value) return;
+    await generateMesh(depthMap.value, newConfig, false);
+  });
+
+  return {
+    mesh,
+    isGenerating,
+    generateMesh,
+    disposeMesh,
+  };
+}

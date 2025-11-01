@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { createImageState } from "./image/state.js";
+import { createGetters } from "./image/getters.js";
 import { createLoaders } from "./image/loaders.js";
 import { createDimensionSetters } from "./image/dimensions.js";
 import { createMeshSetters } from "./image/mesh.js";
@@ -15,6 +16,9 @@ export const useImageStore = defineStore("image", () => {
   // Create all state refs
   const state = createImageState();
 
+  // Create getters (computed values derived from state)
+  const getters = createGetters(state);
+
   // Create all action groups (pass state refs they need)
   const loaders = createLoaders(state);
   const dimensions = createDimensionSetters(state);
@@ -27,6 +31,8 @@ export const useImageStore = defineStore("image", () => {
   return {
     // State
     ...state,
+    // Getters
+    ...getters,
     // Actions
     ...loaders,
     ...dimensions,

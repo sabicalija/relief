@@ -1,0 +1,129 @@
+<template>
+  <div class="viewer-3d">
+    <TresCanvas v-bind="canvasProps">
+      <!-- Camera setup -->
+      <CameraSetup
+        ref="cameraSetupRef"
+        :projection-mode="projectionMode"
+        :camera-position="cameraPosition"
+        :ortho-frustum="orthoFrustum"
+      />
+
+      <!-- Scene environment -->
+      <SceneLighting />
+
+      <!-- Debug helpers -->
+      <SceneHelpers />
+
+      <!-- Mesh editor (mesh + transform controls + measurements) -->
+      <MeshEditor
+        :mesh="mesh"
+        :transform-mode="transformMode"
+        :target-width-mm="imageStore.targetWidthMm"
+        :target-height-mm="imageStore.targetHeightMm"
+      />
+
+      <!-- Viewport helpers -->
+      <ViewportHelpers v-model:canvas-aspect="canvasAspect" />
+    </TresCanvas>
+
+    <!-- Transform controls overlay (top-left) -->
+    <Viewer3DOverlay
+      :show-transform-controls="!!mesh"
+      v-model:transform-mode="transformMode"
+      v-model:projection-mode="projectionMode"
+    />
+
+    <!-- Status indicator (bottom-left) -->
+    <Viewer3DStatusIndicator />
+  </div>
+</template>
+
+<script setup>
+import { TresCanvas } from "@tresjs/core";
+import { watch, ref, computed, nextTick } from "vue";
+import { useImageStore } from "../../../stores/image";
+import { useViewerStatusStore } from "../../../stores/viewerStatus";
+import { useMeshGeneration } from "../../../composables/useMeshGeneration.js";
+import CameraSetup from "./scene/CameraSetup.vue";
+import SceneLighting from "./scene/SceneLighting.vue";
+import SceneHelpers from "./scene/SceneHelpers.vue";
+import MeshEditor from "./scene/MeshEditor.vue";
+import ViewportHelpers from "./scene/ViewportHelpers.vue";
+import Viewer3DOverlay from "./overlays/Viewer3DOverlay.vue";
+import Viewer3DStatusIndicator from "./overlays/Viewer3DStatusIndicator.vue";
+
+const imageStore = useImageStore();
+const statusStore = useViewerStatusStore();
+
+// Transform and projection controls
+const transformMode = ref("translate");
+const projectionMode = ref("perspective");
+
+// Camera setup component ref
+const cameraSetupRef = ref(null);
+
+// Camera state preservation
+const cameraPosition = ref([0, 150, 150]);
+
+// Orthographic camera frustum (dynamically calculated based on aspect ratio)
+const orthoFrustumSize = 150; // Base size for height
+const canvasAspect = ref(1); // Will be updated based on canvas dimensions
+const orthoFrustum = computed(() => {
+  const aspect = canvasAspect.value;
+  return {
+    left: -orthoFrustumSize * aspect,
+    right: orthoFrustumSize * aspect,
+    top: orthoFrustumSize,
+    bottom: -orthoFrustumSize,
+  };
+});
+
+// Mesh generation composable
+const { mesh } = useMeshGeneration({
+  depthMap: computed(() => imageStore.depthMap),
+  meshConfig: computed(() => imageStore.meshGenerationConfig),
+  statusStore,
+});
+
+// Canvas configuration (static)
+const canvasProps = {
+  clearColor: "#f0f0f0",
+  antialias: true,
+  alpha: false,
+};
+
+// Watch for projection mode changes and save camera state
+watch(projectionMode, async (newMode, oldMode) => {
+  // Save current camera position before switch
+  if (cameraSetupRef.value) {
+    const refKey = oldMode === "perspective" ? "perspectiveCameraRef" : "orthographicCameraRef";
+    const currentCameraRef = cameraSetupRef.value[refKey];
+
+    if (currentCameraRef) {
+      const cam = currentCameraRef;
+      cameraPosition.value = [cam.position.x, cam.position.y, cam.position.z];
+    }
+  }
+
+  // Trigger aspect ratio recalculation after camera switch
+  await nextTick();
+  // Force a small update to trigger aspect recalculation
+  canvasAspect.value = canvasAspect.value || 1;
+});
+</script>
+
+<style scoped>
+.viewer-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: #f8f9fa;
+  padding: 0.5rem;
+}
+</style>

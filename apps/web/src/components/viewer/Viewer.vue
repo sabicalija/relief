@@ -20,10 +20,10 @@
 import { ref } from "vue";
 import { useDropZone } from "@vueuse/core";
 import { useImageStore } from "../../stores/image";
-import Viewer2D from "./Viewer2D.vue";
-import Viewer3D from "./Viewer3D.vue";
-import ViewerOverlay from "./ViewerOverlay.vue";
-import ViewerPlaceholder from "./ViewerPlaceholder.vue";
+import Viewer2D from "./2d/Viewer2D.vue";
+import Viewer3D from "./3d/Viewer3D.vue";
+import ViewerOverlay from "./shared/ViewerOverlay.vue";
+import ViewerPlaceholder from "./shared/ViewerPlaceholder.vue";
 
 const imageStore = useImageStore();
 const dropZoneRef = ref(null);
