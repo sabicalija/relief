@@ -67,7 +67,10 @@ const cameraSetupRef = ref(null);
 const cameraPosition = ref([0, 150, 150]);
 
 // Orthographic camera frustum (dynamically calculated based on aspect ratio)
-const orthoFrustumSize = 150; // Base size for height
+// Match perspective camera's visible height at distance using FOV formula:
+// visibleHeight = 2 * distance * tan(FOV/2)
+// With FOV=50° and distance=150*sqrt(2)≈212, this gives ~100 for half-height
+const orthoFrustumSize = 80; // Base size for height (matches perspective camera view)
 const canvasAspect = ref(1); // Will be updated based on canvas dimensions
 const orthoFrustum = computed(() => {
   const aspect = canvasAspect.value;
