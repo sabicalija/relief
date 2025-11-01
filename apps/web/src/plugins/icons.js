@@ -16,6 +16,8 @@ import {
   faExclamationTriangle,
   faCube,
   faSquare,
+  faAnglesDown,
+  faAnglesUp,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
@@ -28,7 +30,9 @@ library.add(
   faCheck,
   faExclamationTriangle,
   faCube,
-  faSquare
+  faSquare,
+  faAnglesDown,
+  faAnglesUp
 );
 
 /**

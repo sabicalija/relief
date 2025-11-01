@@ -32,7 +32,9 @@ const imageStore = useImageStore();
 .viewer-overlay {
   @include overlays.overlay-base;
   @include overlays.overlay-top-left;
+  top: calc(var(--header-height, 0px) + var(--spacing-md));
   pointer-events: none; // Make container non-interactive
+  transition: top 0.3s ease-in-out;
 }
 
 .viewer-overlay > * {

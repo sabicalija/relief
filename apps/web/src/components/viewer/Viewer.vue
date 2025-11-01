@@ -39,6 +39,7 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
 <style scoped>
 .tres-viewer {
   width: 100%;
+  height: 100%;
   position: relative;
   transition: all 0.2s;
 }
@@ -51,13 +52,13 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
 
 .viewer-container {
   width: 100%;
-  height: 500px;
+  height: 100%;
   position: relative;
 }
 
 .viewer-placeholder-wrapper {
   width: 100%;
-  height: 500px;
+  height: 100%;
   position: relative;
 }
 </style>

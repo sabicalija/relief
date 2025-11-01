@@ -3,9 +3,9 @@
     <div class="placeholder-icon">
       <font-awesome-icon icon="image" />
     </div>
-    <p>No preview available</p>
-    <p class="placeholder-hint">Load a depth map to see the preview</p>
-    <p class="placeholder-hint">You can also drag & drop an image here</p>
+    <p>No preview available.</p>
+    <p class="placeholder-hint">Load a depth map to see the preview.</p>
+    <p class="placeholder-hint">You can also drag & drop an image here.</p>
   </div>
 </template>
 
@@ -16,7 +16,7 @@
 <style scoped>
 .viewer-placeholder {
   width: 100%;
-  height: 500px;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;

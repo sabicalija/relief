@@ -16,7 +16,7 @@ const statusStore = useViewerStatusStore();
 <style scoped lang="scss">
 .viewer-status-indicator {
   position: absolute;
-  bottom: 16px;
+  bottom: calc(var(--gallery-height, 0px) + 16px);
   left: 16px;
   display: flex;
   align-items: center;
@@ -30,6 +30,7 @@ const statusStore = useViewerStatusStore();
   pointer-events: auto;
   backdrop-filter: blur(4px);
   z-index: 100; // Above canvas
+  transition: bottom 0.3s ease-in-out;
 
   svg {
     width: 14px;

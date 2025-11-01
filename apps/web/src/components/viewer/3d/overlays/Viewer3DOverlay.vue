@@ -44,13 +44,16 @@ const projectionMode = defineModel("projectionMode", {
 
 .overlay-top-right {
   @include overlays.overlay-top-right;
+  top: calc(var(--header-height, 0px) + var(--spacing-md));
   z-index: 100; // Above canvas
+  transition: top 0.3s ease-in-out;
 }
 
 .overlay-below-gizmo {
   @include overlays.overlay-base;
-  top: 224px; // Gizmo starts at 80px, has 128px height, + 16px gap = 224px
+  top: calc(var(--header-height, 0px) + 224px); // Header + Gizmo (80px) + height (128px) + gap (16px)
   right: var(--spacing-md);
   z-index: 100; // Above canvas
+  transition: top 0.3s ease-in-out;
 }
 </style>

@@ -19,19 +19,18 @@ const initGizmo = () => {
     return false;
   }
 
-  // Get the canvas container
   const container = rend.domElement.parentElement;
   if (!container) {
-    console.warn("❌ Canvas container not found for gizmo");
     return false;
   }
 
-  // Create new gizmo
+  // Create gizmo with className for CSS styling
   viewportGizmo.value = new ViewportGizmo(cam, rend, {
     container: container,
     size: 128,
     placement: "top-right",
-    offset: { top: 80, right: 16 }, // Position below the view mode toggle
+    className: "viewport-gizmo",
+    offset: { top: 80, right: 16 },
   });
 
   // Attach to controls if available
@@ -39,7 +38,6 @@ const initGizmo = () => {
     viewportGizmo.value.attachControls(context.controls.value);
   }
 
-  console.log("✅ ViewportGizmo initialized");
   return true;
 };
 
@@ -47,22 +45,20 @@ const initGizmo = () => {
 const { onRender } = useLoop();
 onRender(() => {
   if (viewportGizmo.value) {
-    viewportGizmo.value.update(); // Sync gizmo with camera orientation
-    viewportGizmo.value.render(); // Render the gizmo
+    viewportGizmo.value.update();
+    viewportGizmo.value.render();
   }
 });
 
-// Watch for camera to be ready (camera.activeCamera is a ComputedRef)
+// Watch for camera to be ready
 watch(
   context.camera.activeCamera,
   (newCamera) => {
     if (newCamera && context.renderer?.instance) {
-      // Dispose old gizmo if it exists
       if (viewportGizmo.value) {
         viewportGizmo.value.dispose();
         viewportGizmo.value = null;
       }
-      // Initialize new gizmo with the new camera
       initGizmo();
     }
   },
@@ -79,21 +75,18 @@ watch(
   }
 );
 
-// Handle resize
-watch(
-  () => context.sizes.value,
-  () => {
-    if (viewportGizmo.value) {
-      viewportGizmo.value.update();
-    }
-  }
-);
-
 // Cleanup on unmount
 onUnmounted(() => {
   if (viewportGizmo.value) {
     viewportGizmo.value.dispose();
-    viewportGizmo.value = null;
   }
 });
 </script>
+
+<style>
+/* Global style for the viewport gizmo - uses CSS variable for dynamic positioning */
+.viewport-gizmo {
+  margin-top: calc(var(--header-height, 0px) + 80px) !important;
+  transition: margin-top 0.3s ease-in-out !important;
+}
+</style>
