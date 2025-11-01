@@ -15,8 +15,12 @@
       <!-- Debug helpers -->
       <SceneHelpers />
 
-      <!-- Mesh editor (mesh + transform controls + measurements) -->
+      <!-- 2D mode: Show depth map as textured plane -->
+      <DepthMapPlane v-if="imageStore.viewMode === '2d'" />
+
+      <!-- 3D mode: Show mesh editor with transform controls -->
       <MeshEditor
+        v-if="imageStore.viewMode === '3d'"
         :mesh="mesh"
         :transform-mode="transformMode"
         :target-width-mm="imageStore.targetWidthMm"
@@ -48,6 +52,7 @@ import { useMeshGeneration } from "../../../composables/useMeshGeneration.js";
 import CameraSetup from "./scene/CameraSetup.vue";
 import SceneLighting from "./scene/SceneLighting.vue";
 import SceneHelpers from "./scene/SceneHelpers.vue";
+import DepthMapPlane from "./scene/DepthMapPlane.vue";
 import MeshEditor from "./scene/MeshEditor.vue";
 import ViewportHelpers from "./scene/ViewportHelpers.vue";
 import Viewer3DOverlay from "./overlays/Viewer3DOverlay.vue";
@@ -82,12 +87,23 @@ const orthoFrustum = computed(() => {
   };
 });
 
-// Mesh generation composable
+// Mesh generation composable - generates once and caches
 const { mesh } = useMeshGeneration({
   depthMap: computed(() => imageStore.depthMap),
   meshConfig: computed(() => imageStore.meshGenerationConfig),
   statusStore,
 });
+
+// Control mesh visibility based on view mode (instant switch)
+watch(
+  [mesh, () => imageStore.viewMode],
+  ([meshValue, viewMode]) => {
+    if (meshValue) {
+      meshValue.visible = viewMode === "3d";
+    }
+  },
+  { immediate: true }
+);
 
 // Canvas configuration (static)
 const canvasProps = {

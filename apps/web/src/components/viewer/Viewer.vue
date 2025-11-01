@@ -2,8 +2,8 @@
   <div ref="dropZoneRef" class="tres-viewer" :class="{ 'drag-over': isOverDropZone }">
     <!-- Show viewer when depth map exists -->
     <div v-if="imageStore.depthMap" class="viewer-container">
-      <Viewer2D v-show="imageStore.viewMode === '2d'" />
-      <Viewer3D v-show="imageStore.viewMode === '3d'" />
+      <!-- Unified 3D canvas handles both 2D plane and 3D mesh -->
+      <Viewer3D />
 
       <!-- View mode toggle overlay -->
       <ViewerOverlay />
@@ -20,7 +20,6 @@
 import { ref } from "vue";
 import { useDropZone } from "@vueuse/core";
 import { useImageStore } from "../../stores/image";
-import Viewer2D from "./2d/Viewer2D.vue";
 import Viewer3D from "./3d/Viewer3D.vue";
 import ViewerOverlay from "./shared/ViewerOverlay.vue";
 import ViewerPlaceholder from "./shared/ViewerPlaceholder.vue";

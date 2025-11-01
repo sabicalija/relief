@@ -109,11 +109,9 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     total: (segmentsX + 1) * (segmentsY + 1),
   };
 
-  // Rotate to lie flat on XZ plane with relief pointing up
-  mesh.rotation.x = -Math.PI / 2;
+  // Rotate to align with 2D plane (180° around X, 180° around Y)
+  mesh.rotation.x = Math.PI / 2;
   mesh.rotation.y = Math.PI;
-  mesh.rotation.z = Math.PI;
-  mesh.scale.z = -1;
 
   return mesh;
 }
