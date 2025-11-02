@@ -1,19 +1,10 @@
 <template>
-  <rect
+  <path
     id="frame"
-    width="18.66458"
-    height="20.42043"
-    x=".25"
-    y="1.25"
     fill="none"
-    fill-opacity=".99608"
-    stroke="#004563"
-    stroke-dasharray="none"
-    stroke-linecap="round"
-    stroke-opacity="1"
-    stroke-width="1"
-    display="inline"
-    ry="2"
+    stroke="var(--logo-frame)"
+    stroke-width="var(--logo-frame-width)"
+    d="M 8 22 h 54 c 4 0 8 4 8 8 v 62 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 v -62 c 0 -4 4 -8 8 -8 z"
     :class="{ 'animate-fade-in': animate }"
   />
 </template>

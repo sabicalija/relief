@@ -2,7 +2,7 @@
   <div class="header-wrapper" :class="{ collapsed: isCollapsed }" ref="headerWrapperRef">
     <header class="app-header">
       <div class="brand">
-        <Logo class="logo" :size="56" decorative />
+        <Logo class="logo" :size="168" decorative />
         <div class="brand-text">
           <h1>Relief</h1>
           <p class="subtitle">
@@ -24,7 +24,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from "vue";
-import Logo from "./Logo.vue";
+import Logo from "./logo/Logo.vue";
 
 const isCollapsed = ref(false);
 const headerWrapperRef = ref(null);

@@ -1,22 +1,18 @@
 <template>
-  <g :class="{ 'animate-slide-in-right': animate }">
-    <path
-      id="hill2"
-      :fill="fillColor"
-      fill-opacity=".99608"
-      stroke="#004564"
-      stroke-linecap="butt"
-      stroke-linejoin="round"
-      stroke-opacity=".99608"
-      stroke-width=".7"
-      d="M18.91458 17.2306v2.43983c0 1.108-.892 2-2 2H2.25c-.5317 0-1.01367-.20541-1.37119-.54153 11.485-2.1289 12.51715-8.52578 18.03577-3.8983Z"
-    />
-  </g>
+  <path
+    id="hill-right"
+    fill="var(--logo-hill-right)"
+    stroke="var(--logo-stroke)"
+    stroke-width="var(--logo-stroke-width)"
+    d="M 70 92 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 c 41 0 42 -27 70 -15 z"
+    :class="{ 'animate-slide-in-right': animate }"
+  />
 </template>
 
 <script setup>
 defineProps({
   animate: { type: Boolean, default: false },
+  gradientCenter: { type: Object, default: () => ({ cx: 9.83, cy: 5.5 }) },
   fillColor: { type: String, default: "var(--color-primary)" },
   strokeColor: { type: String, default: "#004564" },
 });
