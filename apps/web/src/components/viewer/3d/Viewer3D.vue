@@ -62,7 +62,7 @@ const imageStore = useImageStore();
 const statusStore = useViewerStatusStore();
 
 // Transform and projection controls
-const transformMode = ref("translate");
+const transformMode = ref(null); // Start with no transform mode active
 const projectionMode = ref("perspective");
 
 // Camera setup component ref
