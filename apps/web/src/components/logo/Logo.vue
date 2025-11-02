@@ -121,7 +121,8 @@ svg {
   cursor: pointer;
   overflow: visible;
 
-  width: 70px;
+  width: 90px;
+  height: auto;
 
   /* Logo color definitions for use in child components */
 
@@ -153,6 +154,7 @@ svg {
 /* Unscoped for cross-component SVG element targeting */
 #hot-air-balloon {
   transform-origin: center;
+  transform: scale(1.5) translateY(-1px);
   transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
