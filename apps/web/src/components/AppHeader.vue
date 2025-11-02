@@ -1,10 +1,15 @@
 <template>
   <div class="header-wrapper" :class="{ collapsed: isCollapsed }" ref="headerWrapperRef">
     <header class="app-header">
-      <h1>Relief</h1>
-      <p class="subtitle">
-        Schauen tut man mit den <span class="strikethrough">Augen</span> <span class="replacement">Händen</span>.
-      </p>
+      <div class="brand">
+        <Logo class="logo" :size="56" decorative />
+        <div class="brand-text">
+          <h1>Relief</h1>
+          <p class="subtitle">
+            Schauen tut man mit den <span class="strikethrough">Augen</span> <span class="replacement">Händen</span>.
+          </p>
+        </div>
+      </div>
     </header>
     <button
       class="toggle-button"
@@ -19,6 +24,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from "vue";
+import Logo from "./Logo.vue";
 
 const isCollapsed = ref(false);
 const headerWrapperRef = ref(null);
@@ -76,6 +82,23 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.brand .logo {
+  flex: 0 0 auto;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 h1 {
   font-size: 2rem;
   color: #2c3e50;
@@ -96,7 +119,7 @@ h1 {
 }
 
 .replacement {
-  color: #42b983;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -120,7 +143,7 @@ h1 {
 }
 
 .toggle-button:hover {
-  color: #42b983;
+  color: var(--color-primary);
   background: rgba(255, 255, 255, 1);
 }
 </style>
