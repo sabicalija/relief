@@ -1,5 +1,6 @@
 <template>
-  <TresGroup v-if="mesh">
+  <!-- Measurements hidden by default, will be made toggleable later -->
+  <TresGroup v-if="false && mesh">
     <!-- Width measurement line (X axis) -->
     <primitive :object="widthLine" />
     <primitive v-if="widthArrows" :object="widthArrows" />
