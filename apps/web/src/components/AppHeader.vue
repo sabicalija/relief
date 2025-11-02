@@ -80,6 +80,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
 }
 
 .brand {
@@ -91,6 +92,7 @@ onUnmounted(() => {
 
 .brand .logo {
   flex: 0 0 auto;
+  overflow: visible;
 }
 
 .brand-text {
