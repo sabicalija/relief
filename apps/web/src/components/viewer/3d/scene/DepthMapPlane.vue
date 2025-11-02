@@ -1,6 +1,6 @@
 <template>
   <TresGroup v-if="depthMapTexture">
-    <TresMesh :position="[0, 0, 0]" :rotation="[-Math.PI / 2, Math.PI, 0]">
+    <TresMesh :position="[0, planeYPosition, 0]" :rotation="[-Math.PI / 2, Math.PI, 0]">
       <TresPlaneGeometry :args="[planeWidth, planeHeight]" />
       <TresMeshBasicMaterial :map="depthMapTexture" :side="2" />
     </TresMesh>
@@ -16,6 +16,12 @@ import { calculateMeshDimensions } from "../../../../utils/image/processing";
 const imageStore = useImageStore();
 
 const depthMapTexture = shallowRef(null);
+
+// Calculate plane Y position to match top of 3D mesh (after rotation, Z becomes Y)
+const planeYPosition = computed(() => {
+  // The mesh's maximum depth is targetDepthMm
+  return imageStore.targetDepthMm || 20;
+});
 
 // Calculate plane dimensions using same logic as 3D mesh
 const planeWidth = computed(() => {
