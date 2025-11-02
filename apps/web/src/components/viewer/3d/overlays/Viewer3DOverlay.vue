@@ -1,16 +1,21 @@
 <template>
   <div class="viewer-3d-overlay">
+    <!-- Blender-style layout (top-right corner):
+         1. Gizmo at top
+         2. Projection mode selector below gizmo
+         3. Transform mode selector at bottom -->
+
     <!-- Viewport gizmo (managed via store context) -->
     <GizmoManager v-if="showTransformControls" />
 
-    <!-- Transform mode selector (top-right, above gizmo) -->
-    <div v-if="showTransformControls" class="overlay-top-right">
-      <TransformModeSelector v-model="transformMode" />
+    <!-- Projection mode selector (directly below gizmo) -->
+    <div v-if="showTransformControls" class="overlay-projection-mode">
+      <ProjectionModeSelector v-model="projectionMode" />
     </div>
 
-    <!-- Projection mode selector (below gizmo) -->
-    <div v-if="showTransformControls" class="overlay-below-gizmo">
-      <ProjectionModeSelector v-model="projectionMode" />
+    <!-- Transform mode selector (below projection mode) -->
+    <div v-if="showTransformControls" class="overlay-transform-mode">
+      <TransformModeSelector v-model="transformMode" />
     </div>
   </div>
 </template>
@@ -46,18 +51,24 @@ const projectionMode = defineModel("projectionMode", {
   pointer-events: none;
 }
 
-.overlay-top-right {
-  @include overlays.overlay-top-right;
-  top: calc(var(--header-height, 0px) + var(--spacing-md));
-  z-index: 100; // Above canvas
+// Blender-style positioning:
+// Gizmo: top-right (16px from top, 16px from right)
+// Projection: below gizmo with spacing
+// Transform: below projection with spacing
+
+.overlay-projection-mode {
+  @include overlays.overlay-base;
+  top: calc(var(--header-height, 0px) + 160px); // Header + Gizmo offset (16px) + Gizmo size (128px) + gap (16px)
+  right: var(--spacing-md);
+  z-index: 100;
   transition: top 0.3s ease-in-out;
 }
 
-.overlay-below-gizmo {
+.overlay-transform-mode {
   @include overlays.overlay-base;
-  top: calc(var(--header-height, 0px) + 224px); // Header + Gizmo (80px) + height (128px) + gap (16px)
+  top: calc(var(--header-height, 0px) + 225px); // Projection position + projection height (48px) + gap (16px)
   right: var(--spacing-md);
-  z-index: 100; // Above canvas
+  z-index: 100;
   transition: top 0.3s ease-in-out;
 }
 </style>

@@ -36,7 +36,7 @@ const initGizmo = () => {
     size: 128,
     placement: "top-right",
     className: "viewport-gizmo",
-    offset: { top: 80, right: 16 },
+    offset: { top: 16, right: 16 },
   });
 
   // Attach to controls if available
@@ -106,7 +106,7 @@ onUnmounted(() => {
 <style>
 /* Global style for the viewport gizmo - uses CSS variable for dynamic positioning */
 .viewport-gizmo {
-  margin-top: calc(var(--header-height, 0px) + 80px) !important;
+  margin-top: calc(var(--header-height, 0px) + 16px) !important;
   transition: margin-top 0.3s ease-in-out !important;
 }
 </style>
