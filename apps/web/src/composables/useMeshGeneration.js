@@ -42,10 +42,10 @@ function disposeMesh(meshToDispose) {
  * @param {Object} options - Configuration options
  * @param {import('vue').Ref} options.depthMap - Reactive ref to depth map data URL
  * @param {import('vue').ComputedRef} options.meshConfig - Computed mesh configuration
- * @param {Object} options.statusStore - Status store for notifications
+ * @param {Object} options.statusStore - Viewer store for notifications (backward compatible parameter name)
  * @returns {Object} Mesh state and methods
  */
-export function useMeshGeneration({ depthMap, meshConfig, statusStore }) {
+export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerStore }) {
   const mesh = ref(null);
   const isGenerating = ref(false);
 
@@ -65,7 +65,7 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore }) {
     let statusId = null;
 
     if (showStatusMessages) {
-      statusId = statusStore.showGenerating("Generating 3D mesh...");
+      statusId = viewerStore.showGenerating("Generating 3D mesh...");
       console.log("🔄 Generating mesh from depth map...");
     } else {
       console.log("🔄 Regenerating mesh due to parameter change...");
@@ -93,16 +93,16 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore }) {
 
       if (showStatusMessages) {
         console.log("✅ Mesh generated successfully");
-        statusStore.removeStatus(statusId);
-        statusStore.showSuccess("Mesh generated successfully", 2000);
+        viewerStore.removeStatus(statusId);
+        viewerStore.showSuccess("Mesh generated successfully", 2000);
       } else {
         console.log("✅ Mesh regenerated successfully");
       }
     } catch (error) {
       console.error("❌ Error generating mesh:", error);
       if (showStatusMessages) {
-        statusStore.removeStatus(statusId);
-        statusStore.showError(`Error generating mesh: ${error.message}`, 5000);
+        viewerStore.removeStatus(statusId);
+        viewerStore.showError(`Error generating mesh: ${error.message}`, 5000);
       }
     } finally {
       isGenerating.value = false;

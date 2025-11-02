@@ -29,6 +29,9 @@
 
       <!-- Viewport helpers -->
       <ViewportHelpers v-model:canvas-aspect="canvasAspect" />
+
+      <!-- Sync Tres context to store (for external components) -->
+      <ContextSync />
     </TresCanvas>
 
     <!-- Transform controls overlay (top-left) -->
@@ -47,7 +50,7 @@
 import { TresCanvas } from "@tresjs/core";
 import { watch, ref, computed, nextTick } from "vue";
 import { useImageStore } from "../../../stores/image";
-import { useViewerStatusStore } from "../../../stores/viewerStatus";
+import { useViewerStore } from "../../../stores/viewer";
 import { useMeshGeneration } from "../../../composables/useMeshGeneration.js";
 import CameraSetup from "./scene/CameraSetup.vue";
 import SceneLighting from "./scene/SceneLighting.vue";
@@ -55,11 +58,12 @@ import SceneHelpers from "./scene/SceneHelpers.vue";
 import DepthMapPlane from "./scene/DepthMapPlane.vue";
 import MeshEditor from "./scene/MeshEditor.vue";
 import ViewportHelpers from "./scene/ViewportHelpers.vue";
+import ContextSync from "../shared/ContextSync.vue";
 import Viewer3DOverlay from "./overlays/Viewer3DOverlay.vue";
 import Viewer3DStatusIndicator from "./overlays/Viewer3DStatusIndicator.vue";
 
 const imageStore = useImageStore();
-const statusStore = useViewerStatusStore();
+const viewerStore = useViewerStore();
 
 // Transform and projection controls
 const transformMode = ref(null); // Start with no transform mode active
@@ -91,7 +95,7 @@ const orthoFrustum = computed(() => {
 const { mesh } = useMeshGeneration({
   depthMap: computed(() => imageStore.depthMap),
   meshConfig: computed(() => imageStore.meshGenerationConfig),
-  statusStore,
+  statusStore: viewerStore,
 });
 
 // Control mesh visibility based on view mode (instant switch)

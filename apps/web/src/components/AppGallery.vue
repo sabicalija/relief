@@ -29,7 +29,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from "vue";
 import { useImageStore } from "../stores/image";
-import { useViewerStatusStore } from "../stores/viewerStatus";
+import { useViewerStore } from "../stores/viewer";
 
 // Import all demo images
 import demo01 from "../assets/images/demo/demo01.png";
@@ -51,7 +51,7 @@ import demo06 from "../assets/images/demo/demo06.jpg";
 import demo06Depth from "../assets/images/demo/demo06-depth.png";
 
 const imageStore = useImageStore();
-const statusStore = useViewerStatusStore();
+const viewerStore = useViewerStore();
 const activeDemo = ref(null);
 const isCollapsed = ref(false);
 const galleryWrapperRef = ref(null);
@@ -107,7 +107,7 @@ async function loadDemo(demo) {
 // Watch for mesh generation completion and auto-collapse
 // The status store shows "Mesh generated successfully" when done
 watch(
-  () => statusStore.currentStatus,
+  () => viewerStore.currentStatus,
   (newStatus) => {
     if (newStatus && newStatus.message === "Mesh generated successfully" && activeDemo.value) {
       // Collapse after mesh generation completes

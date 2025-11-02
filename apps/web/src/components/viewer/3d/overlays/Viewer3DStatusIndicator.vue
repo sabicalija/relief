@@ -1,16 +1,16 @@
 <template>
   <Transition name="fade">
-    <div v-if="statusStore.currentStatus" class="viewer-status-indicator">
-      <font-awesome-icon :icon="statusStore.currentStatus.icon" :spin="statusStore.currentStatus.spin" />
-      <span>{{ statusStore.currentStatus.message }}</span>
+    <div v-if="viewerStore.currentStatus" class="viewer-status-indicator">
+      <font-awesome-icon :icon="viewerStore.currentStatus.icon" :spin="viewerStore.currentStatus.spin" />
+      <span>{{ viewerStore.currentStatus.message }}</span>
     </div>
   </Transition>
 </template>
 
 <script setup>
-import { useViewerStatusStore } from "../../../../stores/viewerStatus";
+import { useViewerStore } from "../../../../stores/viewer";
 
-const statusStore = useViewerStatusStore();
+const viewerStore = useViewerStore();
 </script>
 
 <style scoped lang="scss">

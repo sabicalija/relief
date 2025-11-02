@@ -1,13 +1,11 @@
 /**
- * Viewer Status Store
- *
- * Manages status messages and indicators across the application.
- * Supports queuing multiple status messages with priority handling.
+ * Viewer status module
+ * Manages status messages and indicators across the application
+ * Supports queuing multiple status messages with priority handling
  */
 import { ref, computed } from "vue";
-import { defineStore } from "pinia";
 
-export const useViewerStatusStore = defineStore("viewerStatus", () => {
+export function createViewerStatus() {
   // Status queue (priority queue: higher priority shows first)
   const statusQueue = ref([]);
   let nextId = 0;
@@ -112,4 +110,4 @@ export const useViewerStatusStore = defineStore("viewerStatus", () => {
     showSuccess,
     showError,
   };
-});
+}

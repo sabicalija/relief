@@ -1,5 +1,8 @@
 <template>
   <div class="viewer-3d-overlay">
+    <!-- Viewport gizmo (managed via store context) -->
+    <GizmoManager v-if="showTransformControls" />
+
     <!-- Transform mode selector (top-right, above gizmo) -->
     <div v-if="showTransformControls" class="overlay-top-right">
       <TransformModeSelector v-model="transformMode" />
@@ -13,6 +16,7 @@
 </template>
 
 <script setup>
+import GizmoManager from "../../shared/GizmoManager.vue";
 import TransformModeSelector from "../controls/TransformModeSelector.vue";
 import ProjectionModeSelector from "../controls/ProjectionModeSelector.vue";
 
