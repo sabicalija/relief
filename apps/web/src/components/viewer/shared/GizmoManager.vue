@@ -107,6 +107,12 @@ onUnmounted(() => {
 /* Global style for the viewport gizmo - uses CSS variable for dynamic positioning */
 .viewport-gizmo {
   margin-top: calc(var(--header-height, 0px) + 16px) !important;
-  transition: margin-top 0.3s ease-in-out !important;
+  margin-right: 16px !important;
+  transition: margin-top 0.3s ease-in-out, margin-right 0.3s ease-in-out !important;
+}
+
+/* Slide gizmo left when panel opens */
+body.viewer-panel-open .viewport-gizmo {
+  margin-right: calc(300px + 32px) !important; /* Panel width + gaps */
 }
 </style>
