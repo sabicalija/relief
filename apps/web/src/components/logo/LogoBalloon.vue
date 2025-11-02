@@ -1,34 +1,61 @@
 <template>
   <g :class="{ 'animate-drop': animate }">
     <defs>
-      <radialGradient id="rg-balloon-body" :cx="gradientCenter.cx" :cy="gradientCenter.cy" r="4">
-        <stop offset="0" stop-color="#f9b063" />
-        <stop offset="1" stop-color="#ec3936" />
+      <radialGradient
+        id="rg-balloon-body"
+        :cx="gradientCenter.cx"
+        :cy="gradientCenter.cy"
+        r="30"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop offset="0" stop-color="var(--logo-gradient-body-inner)" />
+        <stop offset="1" stop-color="var(--logo-gradient-body-outer)" />
       </radialGradient>
-      <radialGradient id="rg-balloon-shadow" :cx="gradientCenter.cx" :cy="gradientCenter.cy" r="4">
-        <stop offset="1" stop-color="#fbb886" />
-        <stop offset="0" stop-color="#fae6d1" />
+      <radialGradient
+        id="rg-balloon-shadow"
+        :cx="gradientCenter.cx"
+        :cy="gradientCenter.cy"
+        r="30"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop offset="0" stop-color="var(--logo-gradient-shadow-inner)" stop-opacity="0.2" />
+        <stop offset="1" stop-color="var(--logo-gradient-shadow-outer)" stop-opacity="0" />
       </radialGradient>
-      <radialGradient id="rg-balloon-reflection" :cx="gradientCenter.cx" :cy="gradientCenter.cy" r="8">
-        <stop offset="0" stop-color="#ffffff" />
-        <stop offset="1" stop-color="#ec3936" />
+      <radialGradient
+        id="rg-balloon-reflection"
+        :cx="gradientCenter.cx"
+        :cy="gradientCenter.cy"
+        r="15"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop offset="0" stop-color="var(--logo-gradient-reflection-inner)" stop-opacity="0.75" />
+        <stop offset="1" stop-color="var(--logo-gradient-reflection-outer)" stop-opacity="0.05" />
       </radialGradient>
     </defs>
     <g id="hot-air-balloon">
       <path
         id="balloon-body"
-        fill="red"
+        fill="url(#rg-balloon-body)"
         d="M 39 55 l -5 0 c -1 -4 -5 -5 -5 -10 c 0 -8 5 -10 10 -10 c 5 0 10 2 10 10 c 0 5 -4 6 -5 10 z"
       />
-      <circle id="balloon-shadow" cx="37" cy="43" r="8" fill="var(--logo-balloon-orange)" />
+      <circle
+        id="balloon-shadow"
+        cx="38"
+        cy="44"
+        r="8"
+        fill="url(#rg-balloon-shadow)"
+        :style="`transform: translate(${isHovering ? reflectionOffset.x / 2 : 0}px, ${
+          isHovering ? reflectionOffset.y / 2 : 0
+        }px);`"
+      />
       <ellipse
         id="balloon-reflection"
-        style="transform: rotate(35deg); transform-origin: 37px 40px"
+        :style="`transform: translate(${reflectionOffset.x / 2}px, ${0 * reflectionOffset.y}px);`"
         cx="37"
         cy="40"
         rx="1.5"
         ry="2"
-        fill="var(--logo-balloon-yellow)"
+        fill="url(#rg-balloon-reflection)"
       />
       <path
         id="balloon-outline"
@@ -56,9 +83,48 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   animate: { type: Boolean, default: false },
-  gradientCenter: { type: Object, default: () => ({ cx: 10, cy: 5 }) },
+  mousePosition: { type: Object, default: () => ({ x: 0, y: 0 }) },
+  isHovering: { type: Boolean, default: false },
+});
+
+// Balloon bounds in viewBox coordinates
+const balloonBounds = {
+  minX: 29,
+  maxX: 49,
+  minY: 35,
+  maxY: 66,
+};
+
+// Calculate gradient center within balloon bounds based on mouse position
+const gradientCenter = computed(() => {
+  const cx = balloonBounds.minX + props.mousePosition.x * (balloonBounds.maxX - balloonBounds.minX);
+  const cy = balloonBounds.minY + props.mousePosition.y * (balloonBounds.maxY - balloonBounds.minY);
+  return { cx, cy };
+});
+
+// Calculate reflection position to align with gradient center
+// Reflection moves within a small rectangular boundary around the balloon center
+const reflectionOffset = computed(() => {
+  const balloonCenterX = 37;
+  const balloonCenterY = 40;
+
+  // Max offset from center (creates rectangular boundary)
+  const maxOffsetX = 2;
+  const maxOffsetY = 1.5;
+
+  // Calculate offset toward gradient center
+  const dx = gradientCenter.value.cx - balloonCenterX;
+  const dy = gradientCenter.value.cy - balloonCenterY;
+
+  // Scale and clamp to max offset
+  const offsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, dx * 0.15));
+  const offsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, dy * 0.15));
+
+  return { x: offsetX, y: offsetY };
 });
 </script>
 

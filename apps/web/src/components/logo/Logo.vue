@@ -17,10 +17,10 @@
     @mouseleave="handleMouseLeave"
   >
     <title v-if="!decorative" :id="titleId">{{ title }}</title>
-    <LogoHillLeft :animate="animateOnMount" :gradient-center="gradientCenter" />
-    <LogoHillRight :animate="animateOnMount" :gradient-center="gradientCenter" />
+    <LogoHillLeft :animate="animateOnMount" :mouse-position="mousePosition" />
+    <LogoHillRight :animate="animateOnMount" :mouse-position="mousePosition" />
     <LogoFrame :animate="animateOnMount" />
-    <LogoBalloon :animate="animateOnMount" :gradient-center="gradientCenter" />
+    <LogoBalloon :animate="animateOnMount" :mouse-position="mousePosition" :is-hovering="isHovering" />
   </svg>
 </template>
 
@@ -41,67 +41,63 @@ const props = defineProps({
 
 const titleId = `logo-title-${Math.random().toString(36).slice(2)}`;
 const animateOnMount = ref(false);
-const gradientCenter = ref({ cx: 10, cy: 5 }); // Default centered position
-const targetGradientCenter = ref({ cx: 10, cy: 5 }); // Target position for smooth animation
+const mousePosition = ref({ x: 0, y: 0 }); // Normalized mouse position (0-1)
+const targetMousePosition = ref({ x: 0, y: 0 }); // Target position for smooth animation
 const isHovering = ref(false);
 
-// Smoothly animate gradient center toward target
+// Smoothly animate mouse position toward target
 let animationFrame = null;
-function animateGradientCenter() {
-  const current = gradientCenter.value;
-  const target = targetGradientCenter.value;
+function animateMousePosition() {
+  const current = mousePosition.value;
+  const target = targetMousePosition.value;
 
   // Lerp (linear interpolation) with easing factor
   const easeFactor = 0.15;
-  const dx = target.cx - current.cx;
-  const dy = target.cy - current.cy;
+  const dx = target.x - current.x;
+  const dy = target.y - current.y;
 
   // Update position
-  gradientCenter.value = {
-    cx: current.cx + dx * easeFactor,
-    cy: current.cy + dy * easeFactor,
+  mousePosition.value = {
+    x: current.x + dx * easeFactor,
+    y: current.y + dy * easeFactor,
   };
 
   // Continue animating if not close enough to target
   const distance = Math.sqrt(dx * dx + dy * dy);
-  if (distance > 0.01) {
-    animationFrame = requestAnimationFrame(animateGradientCenter);
+  if (distance > 0.001) {
+    animationFrame = requestAnimationFrame(animateMousePosition);
   } else {
     animationFrame = null;
   }
 }
 
-// Handle mouse movement to update gradient center
+// Handle mouse movement to update normalized mouse position
 function handleMouseMove(event) {
   isHovering.value = true;
 
   const svg = event.currentTarget;
   const rect = svg.getBoundingClientRect();
 
-  // Calculate mouse position relative to SVG (0-1 range)
+  // Calculate normalized mouse position (0-1 range)
   const x = (event.clientX - rect.left) / rect.width;
   const y = (event.clientY - rect.top) / rect.height;
 
-  // Map to viewBox coordinates (70 x 100)
-  const viewBoxX = x * 70;
-  const viewBoxY = y * 100;
-
-  targetGradientCenter.value = { cx: viewBoxX, cy: viewBoxY };
+  targetMousePosition.value = { x, y };
 
   // Start animation if not already running
   if (!animationFrame) {
-    animateGradientCenter();
+    animateMousePosition();
   }
 }
 
 // Reset to default position when mouse leaves
 function handleMouseLeave() {
   isHovering.value = false;
-  targetGradientCenter.value = { cx: 10, cy: 5 };
+  targetMousePosition.value = { x: 0, y: 0 };
 
   // Start animation if not already running
   if (!animationFrame) {
-    animateGradientCenter();
+    animateMousePosition();
   }
 }
 
@@ -142,6 +138,23 @@ svg {
   --logo-balloon-red: #ec3936;
   --logo-balloon-orange: #f9b063;
   --logo-balloon-yellow: #fffece;
+
+  /* Gradient colors (3 balloon gradients x 2 colors each) */
+  --logo-gradient-body-outer: #ec3936;
+  --logo-gradient-body-inner: #f9b063;
+
+  --logo-gradient-shadow-outer: var(--logo-gradient-body-inner);
+  --logo-gradient-shadow-inner: #fad3aa;
+
+  --logo-gradient-reflection-outer: var(--logo-gradient-shadow-inner);
+  --logo-gradient-reflection-inner: #fae6d1;
+
+  /* Hill gradient colors */
+  --logo-gradient-hill-left-inner: #08b7ba;
+  --logo-gradient-hill-left-outer: #07a1a3;
+
+  --logo-gradient-hill-right-inner: #50c074;
+  --logo-gradient-hill-right-outer: #3f975b;
 }
 
 /* Smooth transitions for gradient positions */
