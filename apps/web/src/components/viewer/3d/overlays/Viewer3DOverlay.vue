@@ -25,12 +25,7 @@
 
     <!-- Sliding panel (revealed when toggle is clicked, aligned with gizmo at top) -->
     <div v-if="showTransformControls" class="overlay-panel" :class="{ 'panel-open': isPanelOpen }">
-      <div class="panel-header">
-        <h3>Properties</h3>
-      </div>
-      <div class="panel-content">
-        <p>Panel content coming soon...</p>
-      </div>
+      <Viewer3DPanel :mesh="mesh" />
     </div>
 
     <!-- Subtle toggle button at far right edge (Blender-style) -->
@@ -47,11 +42,16 @@ import { ref, watch } from "vue";
 import GizmoManager from "../../shared/GizmoManager.vue";
 import TransformModeSelector from "../controls/TransformModeSelector.vue";
 import ProjectionModeSelector from "../controls/ProjectionModeSelector.vue";
+import Viewer3DPanel from "./Viewer3DPanel.vue";
 
 const props = defineProps({
   showTransformControls: {
     type: Boolean,
     default: false,
+  },
+  mesh: {
+    type: Object,
+    default: null,
   },
 });
 
@@ -169,41 +169,16 @@ $slide-offset: calc($panel-width + 16px); // Panel width + gap
   top: calc(var(--header-height, 0px) + 16px); // Align with gizmo
   right: -$panel-width; // Hidden off-screen by default
   width: $panel-width;
-  max-height: calc(100vh - var(--header-height, 0px) - 32px);
-  overflow-y: auto;
-  background: rgba(255, 255, 255, 0.95);
+  height: calc(100vh - var(--header-height, 0px) - 32px);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  transition: right 0.3s ease-in-out;
+  transition: right 0.3s ease-in-out, top 0.3s ease-in-out, height 0.3s ease-in-out;
   z-index: 99; // Below controls
+  overflow: hidden;
 
   &.panel-open {
     right: 0; // Flush with edge (no gap)
     border-radius: 8px 0 0 8px; // Only round left side when open
-  }
-
-  .panel-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 8px 0 0 0; // Only round top-left when open
-
-    h3 {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-primary, #333);
-    }
-  }
-
-  .panel-content {
-    padding: 16px;
-
-    p {
-      margin: 0;
-      font-size: 13px;
-      color: var(--text-secondary, #666);
-    }
   }
 }
 </style>

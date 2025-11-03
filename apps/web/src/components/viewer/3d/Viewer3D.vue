@@ -37,6 +37,7 @@
     <!-- Transform controls overlay (top-left) -->
     <Viewer3DOverlay
       :show-transform-controls="!!mesh"
+      :mesh="mesh"
       v-model:transform-mode="transformMode"
       v-model:projection-mode="projectionMode"
     />

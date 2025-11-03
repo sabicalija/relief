@@ -20,6 +20,9 @@ import {
   faAnglesUp,
   faChevronLeft,
   faChevronRight,
+  faAngleRight,
+  faAngleDown,
+  faEye,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
@@ -36,7 +39,10 @@ library.add(
   faAnglesDown,
   faAnglesUp,
   faChevronLeft,
-  faChevronRight
+  faChevronRight,
+  faAngleRight,
+  faAngleDown,
+  faEye
 );
 
 /**
