@@ -1,6 +1,7 @@
 <template>
   <TresGroup v-if="depthMapTexture">
-    <TresMesh :position="[0, planeYPosition, 0]" :rotation="[-Math.PI / 2, Math.PI, 0]">
+    <!-- Plane lies flat on XY plane at Z=targetDepthMm (no rotation needed in Blender coordinate system) -->
+    <TresMesh :position="[0, 0, planeZPosition]">
       <TresPlaneGeometry :args="[planeWidth, planeHeight]" />
       <TresMeshBasicMaterial :map="depthMapTexture" :side="2" />
     </TresMesh>
@@ -17,9 +18,9 @@ const imageStore = useImageStore();
 
 const depthMapTexture = shallowRef(null);
 
-// Calculate plane Y position to match top of 3D mesh (after rotation, Z becomes Y)
-const planeYPosition = computed(() => {
-  // The mesh's maximum depth is targetDepthMm
+// Calculate plane Z position to match top of 3D mesh
+// In Blender coordinate system, Z is up, so plane sits at Z = targetDepthMm
+const planeZPosition = computed(() => {
   return imageStore.targetDepthMm || 20;
 });
 
