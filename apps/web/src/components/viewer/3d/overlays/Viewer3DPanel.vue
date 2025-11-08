@@ -9,6 +9,14 @@
       >
         <font-awesome-icon icon="cube" />
       </button>
+      <button
+        class="nav-button"
+        :class="{ active: activePanel === 'dimensions' }"
+        title="Dimensions"
+        @click="activePanel = 'dimensions'"
+      >
+        <font-awesome-icon icon="ruler-combined" />
+      </button>
       <button class="nav-button" :class="{ active: activePanel === 'view' }" title="View" @click="activePanel = 'view'">
         <font-awesome-icon icon="eye" />
       </button>
@@ -16,6 +24,9 @@
     <div class="panel-content">
       <!-- Item panel - Transform properties -->
       <ItemPanel v-if="activePanel === 'item'" :mesh="mesh" />
+
+      <!-- Dimensions panel - Mesh dimensions -->
+      <DimensionsPanel v-else-if="activePanel === 'dimensions'" />
 
       <!-- Placeholder for View panel -->
       <div v-else-if="activePanel === 'view'" class="panel-placeholder">
@@ -28,6 +39,7 @@
 <script setup>
 import { ref } from "vue";
 import ItemPanel from "./panels/ItemPanel.vue";
+import DimensionsPanel from "./panels/DimensionsPanel.vue";
 
 const props = defineProps({
   mesh: {
