@@ -1,3 +1,4 @@
+import "./three-setup.js"; // Configure Three.js FIRST (sets Z-up coordinate system)
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import "./assets/style.css";

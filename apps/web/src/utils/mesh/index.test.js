@@ -127,7 +127,7 @@ describe("createMeshFromDepthMap", () => {
       expect(mesh.userData.resolution.total).toBeGreaterThan(0);
     });
 
-    it("should apply rotation to mesh", async () => {
+    it("should not apply rotation to mesh (Blender coordinate system)", async () => {
       const dataUrl = "data:image/png;base64,mock";
       const config = {
         showTexture: false,
@@ -135,20 +135,10 @@ describe("createMeshFromDepthMap", () => {
 
       const mesh = await createMeshFromDepthMap(dataUrl, config);
 
-      expect(mesh.rotation.x).toBe(-Math.PI / 2);
-      expect(mesh.rotation.y).toBe(Math.PI);
-      expect(mesh.rotation.z).toBe(Math.PI);
-    });
-
-    it("should apply negative z-scale to mesh", async () => {
-      const dataUrl = "data:image/png;base64,mock";
-      const config = {
-        showTexture: false,
-      };
-
-      const mesh = await createMeshFromDepthMap(dataUrl, config);
-
-      expect(mesh.scale.z).toBe(-1);
+      // Mesh is built in Blender coordinate system, no rotation needed
+      expect(mesh.rotation.x).toBe(0);
+      expect(mesh.rotation.y).toBe(0);
+      expect(mesh.rotation.z).toBe(0);
     });
   });
 

@@ -74,7 +74,9 @@ const projectionMode = ref("perspective");
 const cameraSetupRef = ref(null);
 
 // Camera state preservation
-const cameraPosition = ref([0, 150, 150]);
+// Position camera to match Blender default view orientation
+// (X, -Y, Z) = (150, -150, 150) provides the correct viewing angle
+const cameraPosition = ref([150, -150, 150]);
 
 // Orthographic camera frustum (dynamically calculated based on aspect ratio)
 // Match perspective camera's visible height at distance using FOV formula:

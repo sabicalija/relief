@@ -3,12 +3,14 @@
     v-if="projectionMode === 'perspective'"
     ref="perspectiveCameraRef"
     :position="cameraPosition"
+    :up="[0, 0, 1]"
     :make-default="true"
   />
   <TresOrthographicCamera
     v-if="projectionMode === 'orthographic'"
     ref="orthographicCameraRef"
     :position="cameraPosition"
+    :up="[0, 0, 1]"
     :left="orthoFrustum.left"
     :right="orthoFrustum.right"
     :top="orthoFrustum.top"

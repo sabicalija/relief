@@ -18,6 +18,7 @@ export function buildTopSurface(depthMap, width, height, meshParams, vertices, f
 
   // Create TOP SURFACE vertices with depth from depth map
   // 1:1 mapping: each pixel becomes a vertex
+  // Relief lies flat on XY plane, depth extends along Z-axis (up)
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       // Get depth value from depth map
@@ -25,8 +26,11 @@ export function buildTopSurface(depthMap, width, height, meshParams, vertices, f
 
       // Map pixel coordinates to physical mesh coordinates
       // Center the mesh at origin
+      // X = width (horizontal/right) - image width
+      // Y = height (vertical/forward) - image height (flipped)
+      // Z = depth (relief height/up) - extends upward from base
       const meshX = (x / (width - 1)) * meshWidth - meshWidth / 2;
-      const meshY = (y / (height - 1)) * meshHeight - meshHeight / 2;
+      const meshY = meshHeight / 2 - (y / (height - 1)) * meshHeight;
       const meshZ = depthValue * targetDepthMm;
 
       vertices.push(new THREE.Vector3(meshX, meshY, meshZ));
@@ -64,12 +68,16 @@ export function buildBottomSurface(width, height, meshParams, vertices, faces) {
   const { meshWidth, meshHeight, baseThicknessMm } = meshParams;
 
   // Create BOTTOM SURFACE vertices (flat base)
+  // Relief base lies flat on XY plane below the surface
   const bottomStartIdx = vertices.length;
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       // Map pixel coordinates to physical mesh coordinates
+      // X = width (horizontal/right)
+      // Y = height (vertical/forward) - flipped
+      // Z = depth (negative - base below surface)
       const meshX = (x / (width - 1)) * meshWidth - meshWidth / 2;
-      const meshY = (y / (height - 1)) * meshHeight - meshHeight / 2;
+      const meshY = meshHeight / 2 - (y / (height - 1)) * meshHeight;
       const meshZ = -baseThicknessMm;
 
       vertices.push(new THREE.Vector3(meshX, meshY, meshZ));

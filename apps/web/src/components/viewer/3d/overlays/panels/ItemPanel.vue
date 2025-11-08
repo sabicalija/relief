@@ -89,9 +89,10 @@ const isUserEditing = ref(false);
 let editTimeout = null;
 
 // Default mesh rotation (the "identity" orientation for this app)
+// With Blender coordinate system (Z-up), mesh is generated in correct orientation
 const DEFAULT_ROTATION = {
-  x: Math.PI / 2, // 90 degrees
-  y: Math.PI, // 180 degrees
+  x: 0,
+  y: 0,
   z: 0,
 };
 

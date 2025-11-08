@@ -109,9 +109,8 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     total: (segmentsX + 1) * (segmentsY + 1),
   };
 
-  // Rotate to align with 2D plane (180° around X, 180° around Y)
-  mesh.rotation.x = Math.PI / 2;
-  mesh.rotation.y = Math.PI;
+  // No rotation needed - mesh is built in Blender coordinate system
+  // X = width (right), Y = depth (forward), Z = height (up)
 
   return mesh;
 }

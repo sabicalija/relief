@@ -47,19 +47,30 @@ pnpm test:coverage    # Coverage report
 
 ### 1. Coordinate System
 
-3D mesh coordinate mapping must be preserved:
+3D mesh uses Blender's default coordinate system:
 
 ```javascript
-// Image pixel to 3D mesh coordinates
-const x = (j / segmentsX) * meshWidth - meshWidth / 2; // X = width
-const y = (i / segmentsY) * meshHeight - meshHeight / 2; // Y = height
-const z = depthValue * targetDepthMm; // Z = depth
+// Image pixel to 3D mesh coordinates (Blender system)
+const meshX = (x / (width - 1)) * meshWidth - meshWidth / 2; // X = width (right)
+const meshZ = (y / (height - 1)) * meshHeight - meshHeight / 2; // Z = height (up)
+const meshY = depthValue * targetDepthMm; // Y = depth (forward/relief height)
 
-// Single rotation to lay flat
-mesh.rotation.x = -Math.PI / 2;
+// Camera up vector set to Z-up for Blender compatibility
+camera.up.set(0, 0, 1);
+
+// Initial camera position for correct gizmo orientation
+const cameraPosition = [150, -150, 150]; // (X, -Y, Z) for Blender default view
 ```
 
-Rules: X/Y/Z map to width/height/depth before rotation. Use single -90° rotation. Never use negative Z-scaling or complex multi-axis rotations.
+Rules:
+
+- X-axis = width (horizontal/right, red in Blender)
+- Y-axis = depth (forward/relief height, green in Blender)
+- Z-axis = height (vertical/up, blue in Blender)
+- Camera up must be set to (0,0,1) for correct gizmo orientation
+- Camera position [150, -150, 150] aligns view with Blender default
+- Mesh is built in final orientation, no rotations applied
+- THREE.Object3D.DEFAULT_UP must be set to (0,0,1) in three-setup.js before any other imports
 
 ### 2. Parameter Independence
 
