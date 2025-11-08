@@ -1,5 +1,11 @@
 <template>
   <div class="projection-mode-selector">
+    <!-- Camera reset button -->
+    <button class="mode-button reset-button" title="Reset Camera (Home)" @click="handleResetCamera">
+      <font-awesome-icon icon="camera-rotate" />
+    </button>
+
+    <!-- Projection mode buttons -->
     <button
       v-for="mode in modes"
       :key="mode.value"
@@ -21,10 +27,14 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue", "reset-camera"]);
 
 function handleClick(value) {
   emit("update:modelValue", value);
+}
+
+function handleResetCamera() {
+  emit("reset-camera");
 }
 
 const modes = [
@@ -45,7 +55,7 @@ const modes = [
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   pointer-events: auto;
-  width: fit-content; // Only as wide as 2 buttons + padding
+  width: fit-content;
 }
 
 .mode-button {

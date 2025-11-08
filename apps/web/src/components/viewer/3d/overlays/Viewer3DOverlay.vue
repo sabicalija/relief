@@ -12,9 +12,9 @@
       <!-- Viewport gizmo (managed via store context) -->
       <GizmoManager />
 
-      <!-- Projection mode selector (directly below gizmo) -->
+      <!-- Projection mode selector with camera reset -->
       <div class="overlay-projection-mode">
-        <ProjectionModeSelector v-model="projectionMode" />
+        <ProjectionModeSelector v-model="projectionMode" @reset-camera="resetCamera" />
       </div>
 
       <!-- Transform mode selector (below projection mode) -->
@@ -39,10 +39,13 @@
 
 <script setup>
 import { ref, watch } from "vue";
+import { useViewerStore } from "../../../../stores/viewer";
 import GizmoManager from "../../shared/GizmoManager.vue";
 import TransformModeSelector from "../controls/TransformModeSelector.vue";
 import ProjectionModeSelector from "../controls/ProjectionModeSelector.vue";
 import Viewer3DPanel from "./Viewer3DPanel.vue";
+
+const viewerStore = useViewerStore();
 
 const props = defineProps({
   showTransformControls: {
@@ -70,6 +73,21 @@ const isPanelOpen = ref(false);
 
 function togglePanel() {
   isPanelOpen.value = !isPanelOpen.value;
+}
+
+// Reset camera to initial position
+function resetCamera() {
+  const camera = viewerStore.camera;
+  const controls = viewerStore.controls;
+
+  if (!camera || !controls) return;
+
+  // Reset to Blender default view position
+  camera.position.set(150, -150, 150);
+
+  // Reset controls target to origin
+  controls.target.set(0, 0, 0);
+  controls.update();
 }
 
 // Add body class when panel opens to control gizmo position

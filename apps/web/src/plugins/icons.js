@@ -24,6 +24,7 @@ import {
   faAngleDown,
   faEye,
   faRulerCombined,
+  faCameraRotate,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
@@ -44,7 +45,8 @@ library.add(
   faAngleRight,
   faAngleDown,
   faEye,
-  faRulerCombined
+  faRulerCombined,
+  faCameraRotate
 );
 
 /**
