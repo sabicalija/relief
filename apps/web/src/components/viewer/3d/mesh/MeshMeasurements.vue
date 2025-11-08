@@ -1,18 +1,37 @@
 <template>
-  <!-- Measurements hidden by default, will be made toggleable later -->
-  <TresGroup v-if="false && mesh">
-    <!-- Width measurement line (X axis) -->
-    <primitive :object="widthLine" />
-    <primitive v-if="widthArrows" :object="widthArrows" />
+  <!-- Show only the active dimension measurement -->
+  <TresGroup v-if="viewerStore.activeDimensionMeasurement && mesh">
+    <!-- Width measurement line (X axis) - shown when editing width -->
+    <template v-if="viewerStore.activeDimensionMeasurement === 'width' && widthLine">
+      <primitive :object="widthLine" />
+      <primitive v-if="widthArrows" :object="widthArrows" />
+    </template>
 
-    <!-- Height measurement line (Z axis) -->
-    <primitive :object="heightLine" />
-    <primitive v-if="heightArrows" :object="heightArrows" />
+    <!-- Height measurement line (Y axis) - shown when editing height -->
+    <template v-if="viewerStore.activeDimensionMeasurement === 'height' && heightLine">
+      <primitive :object="heightLine" />
+      <primitive v-if="heightArrows" :object="heightArrows" />
+    </template>
+
+    <!-- Depth measurement line (Z axis) - shown when editing depth -->
+    <template v-if="viewerStore.activeDimensionMeasurement === 'depth' && depthLine">
+      <primitive :object="depthLine" />
+      <primitive v-if="depthArrows" :object="depthArrows" />
+    </template>
+
+    <!-- Base Thickness measurement line (Z axis) - shown when editing baseThickness -->
+    <template v-if="viewerStore.activeDimensionMeasurement === 'baseThickness' && baseThicknessLine">
+      <primitive :object="baseThicknessLine" />
+      <primitive v-if="baseThicknessArrows" :object="baseThicknessArrows" />
+    </template>
   </TresGroup>
 </template>
 <script setup>
 import { computed, watch, shallowRef } from "vue";
 import * as THREE from "three";
+import { useViewerStore } from "../../../../stores/viewer";
+
+const viewerStore = useViewerStore();
 
 const props = defineProps({
   mesh: {
@@ -29,12 +48,14 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update:width", "update:height"]);
-
 const widthLine = shallowRef(null);
 const heightLine = shallowRef(null);
 const widthArrows = shallowRef(null);
 const heightArrows = shallowRef(null);
+const depthLine = shallowRef(null);
+const depthArrows = shallowRef(null);
+const baseThicknessLine = shallowRef(null);
+const baseThicknessArrows = shallowRef(null);
 
 // Create measurement lines
 function createMeasurementLine(start, end, color) {
@@ -87,7 +108,7 @@ function createArrowHeads(start, end, color) {
   return group;
 }
 
-// Update measurement lines based on mesh
+// Update measurement lines based on mesh and active dimension
 function updateMeasurements() {
   if (!props.mesh) return;
 
@@ -95,46 +116,106 @@ function updateMeasurements() {
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
 
-  // Width line (along X axis, positioned at half height with padding)
-  const widthZ = center.z + size.z / 2 + 10; // Half height + 10mm padding
-  const widthY = center.y;
-  const widthStart = new THREE.Vector3(box.min.x, widthY, widthZ);
-  const widthEnd = new THREE.Vector3(box.max.x, widthY, widthZ);
+  // Only create width line when needed
+  if (viewerStore.activeDimensionMeasurement === "width") {
+    // Width line (along X axis, positioned at Z=0 below mesh, alongside the width)
+    // In Blender coordinate system: X = width, Y = depth, Z = height
+    const widthZ = 0; // At Z=0 (ground plane)
+    const widthY = box.min.y - 10; // In front of mesh + 10mm padding
+    const widthStart = new THREE.Vector3(box.min.x, widthY, widthZ);
+    const widthEnd = new THREE.Vector3(box.max.x, widthY, widthZ);
 
-  if (widthLine.value) {
-    widthLine.value.geometry.dispose();
-    widthLine.value.material.dispose();
-  }
-  if (widthArrows.value) {
-    widthArrows.value.traverse((child) => {
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) child.material.dispose();
-    });
-  }
-  widthLine.value = createMeasurementLine(widthStart, widthEnd, 0xff6b6b);
-  widthArrows.value = createArrowHeads(widthStart, widthEnd, 0xff6b6b);
+    if (widthLine.value) {
+      widthLine.value.geometry.dispose();
+      widthLine.value.material.dispose();
+    }
+    if (widthArrows.value) {
+      widthArrows.value.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+    }
 
-  // Height line (along Z axis, positioned at half width + padding)
-  // Since mesh is rotated -90° on X, Z axis represents height
-  const heightX = center.x + size.x / 2 + 10; // Half width + 10mm padding
-  const heightStart = new THREE.Vector3(heightX, center.y, box.min.z);
-  const heightEnd = new THREE.Vector3(heightX, center.y, box.max.z);
+    widthLine.value = createMeasurementLine(widthStart, widthEnd, 0xff0000); // Red for X-axis
+    widthArrows.value = createArrowHeads(widthStart, widthEnd, 0xff0000);
+  }
 
-  if (heightLine.value) {
-    heightLine.value.geometry.dispose();
-    heightLine.value.material.dispose();
+  // Only create height line when needed
+  if (viewerStore.activeDimensionMeasurement === "height") {
+    // Height line (along Y axis, positioned to the right of mesh with padding)
+    // In Blender coordinate system: Y represents the depth dimension
+    const heightX = box.max.x + 10; // Right of mesh + 10mm padding
+    const heightZ = center.z;
+    const heightStart = new THREE.Vector3(heightX, box.min.y, heightZ);
+    const heightEnd = new THREE.Vector3(heightX, box.max.y, heightZ);
+
+    if (heightLine.value) {
+      heightLine.value.geometry.dispose();
+      heightLine.value.material.dispose();
+    }
+    if (heightArrows.value) {
+      heightArrows.value.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+    }
+
+    heightLine.value = createMeasurementLine(heightStart, heightEnd, 0x00ff00); // Green for Y-axis
+    heightArrows.value = createArrowHeads(heightStart, heightEnd, 0x00ff00);
   }
-  if (heightArrows.value) {
-    heightArrows.value.traverse((child) => {
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) child.material.dispose();
-    });
+
+  // Only create depth line when needed (Z axis - relief height)
+  if (viewerStore.activeDimensionMeasurement === "depth") {
+    // Depth line (along Z axis, positioned to the side of mesh with padding)
+    // Shows the relief height from Z=0 (surface) to top
+    const depthX = box.max.x + 10; // Right of mesh + 10mm padding (same as base thickness)
+    const depthY = center.y;
+    const depthStart = new THREE.Vector3(depthX, depthY, 0); // From Z=0 (surface level)
+    const depthEnd = new THREE.Vector3(depthX, depthY, box.max.z); // To top of relief
+
+    if (depthLine.value) {
+      depthLine.value.geometry.dispose();
+      depthLine.value.material.dispose();
+    }
+    if (depthArrows.value) {
+      depthArrows.value.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+    }
+
+    depthLine.value = createMeasurementLine(depthStart, depthEnd, 0x0000ff); // Blue for Z-axis
+    depthArrows.value = createArrowHeads(depthStart, depthEnd, 0x0000ff);
   }
-  heightLine.value = createMeasurementLine(heightStart, heightEnd, 0x6b9fff);
-  heightArrows.value = createArrowHeads(heightStart, heightEnd, 0x6b9fff);
+
+  // Only create base thickness line when needed (Z axis - negative)
+  if (viewerStore.activeDimensionMeasurement === "baseThickness") {
+    // Base thickness line (along Z axis, below Z=0)
+    // Shows the base thickness below the relief surface
+    const baseX = box.max.x + 10; // Right of mesh + 10mm padding (same as depth)
+    const baseY = center.y;
+    const baseStart = new THREE.Vector3(baseX, baseY, box.min.z); // From bottom of base
+    const baseEnd = new THREE.Vector3(baseX, baseY, 0); // To Z=0 (surface level)
+
+    if (baseThicknessLine.value) {
+      baseThicknessLine.value.geometry.dispose();
+      baseThicknessLine.value.material.dispose();
+    }
+    if (baseThicknessArrows.value) {
+      baseThicknessArrows.value.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+    }
+
+    baseThicknessLine.value = createMeasurementLine(baseStart, baseEnd, 0x0000ff); // Blue for Z-axis (below surface)
+    baseThicknessArrows.value = createArrowHeads(baseStart, baseEnd, 0x0000ff);
+  }
 }
 
 // Watch for mesh changes
 watch(() => props.mesh, updateMeasurements, { immediate: true });
 watch([() => props.targetWidthMm, () => props.targetHeightMm], updateMeasurements);
+// Watch for active dimension changes
+watch(() => viewerStore.activeDimensionMeasurement, updateMeasurements);
 </script>

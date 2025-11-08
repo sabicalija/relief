@@ -31,11 +31,13 @@ export const useViewerStore = defineStore("viewer", () => {
     // Status state
     statusQueue: status.statusQueue,
     currentStatus: status.currentStatus,
+    activeDimensionMeasurement: status.activeDimensionMeasurement,
 
     // Status actions
     addStatus: status.addStatus,
     removeStatus: status.removeStatus,
     clearAllStatus: status.clearAll,
+    setActiveDimensionMeasurement: status.setActiveDimensionMeasurement,
 
     // Status helpers
     showGenerating: status.showGenerating,

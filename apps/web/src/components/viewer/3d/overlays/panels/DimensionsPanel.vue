@@ -11,6 +11,8 @@
           :placeholder="actualMeshDimensions.width.toFixed(1)"
           min="1"
           step="1"
+          @focus="handleFocus('width')"
+          @blur="handleBlur"
         />
         <span class="property-unit">mm</span>
       </div>
@@ -28,30 +30,48 @@
           :placeholder="actualMeshDimensions.height.toFixed(1)"
           min="1"
           step="1"
+          @focus="handleFocus('height')"
+          @blur="handleBlur"
         />
         <span class="property-unit">mm</span>
       </div>
-      <p class="property-hint">Z-axis (vertical)</p>
+      <p class="property-hint">Y-axis (vertical)</p>
     </div>
 
     <!-- Depth -->
     <div class="property-group">
       <div class="property-label">Depth:</div>
       <div class="property-row">
-        <input type="number" class="property-input" v-model="localDepth" min="0.1" step="0.1" />
+        <input
+          type="number"
+          class="property-input"
+          v-model="localDepth"
+          min="0.1"
+          step="0.1"
+          @focus="handleFocus('depth')"
+          @blur="handleBlur"
+        />
         <span class="property-unit">mm</span>
       </div>
-      <p class="property-hint">Y-axis (relief height)</p>
+      <p class="property-hint">Z-axis (depth)</p>
     </div>
 
     <!-- Base Thickness -->
     <div class="property-group">
       <div class="property-label">Base Thickness:</div>
       <div class="property-row">
-        <input type="number" class="property-input" v-model="localBaseThickness" min="0" step="0.1" />
+        <input
+          type="number"
+          class="property-input"
+          v-model="localBaseThickness"
+          min="0"
+          step="0.1"
+          @focus="handleFocus('baseThickness')"
+          @blur="handleBlur"
+        />
         <span class="property-unit">mm</span>
       </div>
-      <p class="property-hint">Solid base below relief</p>
+      <p class="property-hint">Z-axis (depth, below surface)</p>
     </div>
   </div>
 </template>
@@ -60,9 +80,11 @@
 import { computed, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useImageStore } from "@/stores/image.js";
+import { useViewerStore } from "@/stores/viewer.js";
 import { calculateMeshDimensions } from "@/utils/image/processing.js";
 
 const imageStore = useImageStore();
+const viewerStore = useViewerStore();
 
 // Local state for inputs
 const localWidth = ref(imageStore.targetWidthMm);
@@ -108,6 +130,16 @@ watch(localWidth, (value) => debouncedUpdateWidth(value));
 watch(localHeight, (value) => debouncedUpdateHeight(value));
 watch(localDepth, (value) => debouncedUpdateDepth(value));
 watch(localBaseThickness, (value) => debouncedUpdateBaseThickness(value));
+
+// Show specific measurement when user focuses dimension input
+function handleFocus(dimension) {
+  viewerStore.setActiveDimensionMeasurement(dimension);
+}
+
+// Hide measurements when user blurs any dimension input
+function handleBlur() {
+  viewerStore.setActiveDimensionMeasurement(null);
+}
 
 // Sync store changes back to local state
 watch(

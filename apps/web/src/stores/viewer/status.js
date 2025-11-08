@@ -10,6 +10,9 @@ export function createViewerStatus() {
   const statusQueue = ref([]);
   let nextId = 0;
 
+  // Measurements visibility state - track which dimension is being edited
+  const activeDimensionMeasurement = ref(null); // 'width', 'height', 'depth', or null
+
   /**
    * Current active status (highest priority)
    */
@@ -99,11 +102,13 @@ export function createViewerStatus() {
     // State
     statusQueue,
     currentStatus,
+    activeDimensionMeasurement,
 
     // Actions
     addStatus,
     removeStatus,
     clearAll,
+    setActiveDimensionMeasurement: (value) => (activeDimensionMeasurement.value = value),
 
     // Helpers
     showGenerating,
