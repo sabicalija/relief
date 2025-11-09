@@ -8,7 +8,6 @@ export function createImageState() {
   // Image data
   const depthMap = ref(null);
   const textureMap = ref(null); // Optional separate texture for mesh
-  const useCustomTexture = ref(false); // Switch between depth map and custom texture
   const imageDimensions = ref(null); // Store original image dimensions
   const depthMapFilename = ref(null); // Original filename of the depth map
   const viewMode = ref("3d"); // "2d" for depth map, "3d" for STL viewer
@@ -22,9 +21,9 @@ export function createImageState() {
   const simplificationRatio = ref(1.0); // Mesh simplification ratio (0.0-1.0, 1.0 = no simplification)
 
   // Display options
-  const showTexture = ref(true); // Toggle for depth map texture projection
+  const showTexture = ref(false); // Toggle for texture projection (only shows when custom texture loaded)
   const showGrid = ref(true); // Toggle for grid helper in viewer
-  const baseColor = ref("#808080"); // Color for perimeter walls and bottom surface
+  const itemColor = ref("#808080"); // Color for the entire mesh
 
   // Advanced depth enhancement options
   const enhanceDetails = ref(false); // Enable adaptive depth enhancement
@@ -41,7 +40,6 @@ export function createImageState() {
     // Image data
     depthMap,
     textureMap,
-    useCustomTexture,
     imageDimensions,
     depthMapFilename,
     viewMode,
@@ -55,7 +53,7 @@ export function createImageState() {
     // Display
     showTexture,
     showGrid,
-    baseColor,
+    itemColor,
     // Enhancements
     enhanceDetails,
     detailEnhancementStrength,

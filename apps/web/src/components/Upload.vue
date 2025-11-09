@@ -7,13 +7,23 @@
 
 <script setup>
 import { useImageStore } from "../stores/image";
+import { useViewerStore } from "../stores/viewer";
 
 const imageStore = useImageStore();
+const viewerStore = useViewerStore();
 
-const handleFileUpload = (event) => {
+const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (file) {
-    imageStore.loadDepthMapFromFile(file);
+    // Show loading status immediately before file reading starts
+    const statusId = viewerStore.showGenerating("Loading depth map...");
+
+    try {
+      await imageStore.loadDepthMapFromFile(file);
+    } finally {
+      // Remove loading status - mesh generation watcher will show its own status
+      viewerStore.removeStatus(statusId);
+    }
   }
 };
 </script>

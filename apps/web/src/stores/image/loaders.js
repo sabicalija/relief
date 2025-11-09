@@ -3,7 +3,7 @@
  * Handles loading depth maps from files, URLs, and data URLs
  */
 export function createLoaders(state) {
-  const { depthMap, textureMap, useCustomTexture, imageDimensions, depthMapFilename, showTexture, viewMode } = state;
+  const { depthMap, textureMap, imageDimensions, depthMapFilename, showTexture, viewMode } = state;
 
   /**
    * Load a depth map from a File object
@@ -37,9 +37,8 @@ export function createLoaders(state) {
 
           // Set depth map and related state
           depthMap.value = imageData;
-          textureMap.value = imageData;
-          useCustomTexture.value = false;
-          showTexture.value = true;
+          textureMap.value = null; // No custom texture initially
+          showTexture.value = true; // Use depth map as texture by default
           depthMapFilename.value = file.name;
 
           // Switch to 3D view
@@ -77,10 +76,9 @@ export function createLoaders(state) {
     img.src = imageData;
 
     depthMap.value = imageData;
-    // Automatically set the depth map as the texture map
-    textureMap.value = imageData;
-    useCustomTexture.value = false; // Use depth map as texture
-    showTexture.value = true; // Enable texture display
+    // Don't set textureMap here - let user choose to upload custom texture
+    textureMap.value = null;
+    showTexture.value = true; // Use depth map as texture by default
     if (filename) {
       depthMapFilename.value = filename;
     }
@@ -125,10 +123,10 @@ export function createLoaders(state) {
       // Use existing helpers to set depth map (this extracts dimensions)
       setDepthMap(depthDataUrl, filename || null);
 
-      // If texture provided, set it and enable custom texture
+      // If texture provided, set it as custom texture
       if (textureDataUrl) {
         textureMap.value = textureDataUrl;
-        useCustomTexture.value = true;
+        showTexture.value = true;
       }
 
       return;

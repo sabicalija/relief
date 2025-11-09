@@ -1,12 +1,7 @@
 <template>
   <div class="viewer-3d-panel">
     <div class="panel-nav">
-      <button
-        class="nav-button"
-        :class="{ active: activePanel === 'item' }"
-        title="Item Tool"
-        @click="activePanel = 'item'"
-      >
+      <button class="nav-button" :class="{ active: activePanel === 'item' }" title="Item" @click="activePanel = 'item'">
         <font-awesome-icon icon="cube" />
       </button>
       <button
@@ -16,6 +11,14 @@
         @click="activePanel = 'dimensions'"
       >
         <font-awesome-icon icon="ruler-combined" />
+      </button>
+      <button
+        class="nav-button"
+        :class="{ active: activePanel === 'material' }"
+        title="Material"
+        @click="activePanel = 'material'"
+      >
+        <font-awesome-icon icon="palette" />
       </button>
       <button class="nav-button" :class="{ active: activePanel === 'view' }" title="View" @click="activePanel = 'view'">
         <font-awesome-icon icon="eye" />
@@ -28,6 +31,9 @@
       <!-- Dimensions panel - Mesh dimensions -->
       <DimensionsPanel v-else-if="activePanel === 'dimensions'" />
 
+      <!-- Material panel - Color and texture -->
+      <MaterialPanel v-else-if="activePanel === 'material'" />
+
       <!-- View panel - Scene helpers and visibility -->
       <ViewPanel v-else-if="activePanel === 'view'" :mesh="mesh" />
     </div>
@@ -38,6 +44,7 @@
 import { ref } from "vue";
 import ItemPanel from "./panels/ItemPanel.vue";
 import DimensionsPanel from "./panels/DimensionsPanel.vue";
+import MaterialPanel from "./panels/MaterialPanel.vue";
 import ViewPanel from "./panels/ViewPanel.vue";
 
 const props = defineProps({

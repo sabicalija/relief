@@ -9,7 +9,7 @@ import * as THREE from "three";
  * @returns {THREE.Material[]} Array of materials [topMaterial, bottomMaterial]
  */
 export function createMeshMaterials(materialConfig) {
-  const { showTexture = true, textureMap = null, imageDataUrl = null, baseColor = "#808080" } = materialConfig;
+  const { showTexture = true, textureMap = null, imageDataUrl = null, itemColor = "#808080" } = materialConfig;
 
   // Load texture if enabled
   let texture = null;
@@ -21,18 +21,22 @@ export function createMeshMaterials(materialConfig) {
     texture.colorSpace = THREE.SRGBColorSpace;
   }
 
+  // For top surface: use white when texture is present (to avoid color tinting), otherwise use itemColor
+  const topColor = texture ? "#ffffff" : itemColor;
+
   // Create materials array
   const materials = [
     // Material 0: Top surface with optional texture
     new THREE.MeshStandardMaterial({
       map: texture,
+      color: new THREE.Color(topColor),
       metalness: 0.3,
       roughness: 0.7,
       side: THREE.DoubleSide,
     }),
-    // Material 1: Bottom and walls with solid color
+    // Material 1: Bottom and walls with solid color (always uses itemColor)
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color(baseColor),
+      color: new THREE.Color(itemColor),
       metalness: 0.3,
       roughness: 0.7,
       side: THREE.DoubleSide,

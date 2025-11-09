@@ -109,8 +109,8 @@ async function loadDemo(demo) {
 watch(
   () => viewerStore.currentStatus,
   (newStatus) => {
-    if (newStatus && newStatus.message === "Mesh generated successfully" && activeDemo.value) {
-      // Collapse after mesh generation completes
+    if (newStatus && newStatus.message === "Mesh generated successfully") {
+      // Collapse after mesh generation completes (demo or drag&drop)
       isCollapsed.value = true;
     }
   }

@@ -119,10 +119,39 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
   );
 
   // Watch for parameter changes (regeneration without new depth map)
-  watch(meshConfig, async (newConfig) => {
-    if (!depthMap.value) return;
-    await generateMesh(depthMap.value, newConfig, false);
-  });
+  // Exclude itemColor from triggering full regeneration
+  watch(
+    () => {
+      const { itemColor, ...rest } = meshConfig.value;
+      return rest;
+    },
+    async (newConfig) => {
+      if (!depthMap.value) return;
+      await generateMesh(depthMap.value, { ...newConfig, itemColor: meshConfig.value.itemColor }, false);
+    }
+  );
+
+  // Watch itemColor separately - just update material color
+  watch(
+    () => meshConfig.value.itemColor,
+    (newColor) => {
+      if (!mesh.value) return;
+      if (!mesh.value.material) return;
+
+      // Determine if top surface has a texture
+      const hasTexture = mesh.value.material[0]?.map !== null;
+
+      // Top surface: white if texture present (to avoid tinting), otherwise itemColor
+      if (mesh.value.material[0]) {
+        mesh.value.material[0].color.set(hasTexture ? "#ffffff" : newColor);
+      }
+
+      // Bottom/walls: always use itemColor
+      if (mesh.value.material[1]) {
+        mesh.value.material[1].color.set(newColor);
+      }
+    }
+  );
 
   return {
     mesh,

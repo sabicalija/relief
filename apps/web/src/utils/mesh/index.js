@@ -97,7 +97,7 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     showTexture: config.showTexture,
     textureMap: config.textureMap,
     imageDataUrl,
-    baseColor: config.baseColor,
+    itemColor: config.itemColor,
   });
 
   const mesh = new THREE.Mesh(geometry, materials);

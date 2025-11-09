@@ -2,16 +2,7 @@
  * Display and UI settings
  */
 export function createDisplaySetters(state) {
-  const {
-    showTexture,
-    showGrid,
-    baseColor,
-    textureMap,
-    useCustomTexture,
-    depthMap,
-    imageDimensions,
-    depthMapFilename,
-  } = state;
+  const { showTexture, showGrid, itemColor, textureMap, depthMap, imageDimensions, depthMapFilename } = state;
 
   /**
    * Set texture map data
@@ -19,6 +10,7 @@ export function createDisplaySetters(state) {
    */
   function setTextureMap(imageData) {
     textureMap.value = imageData;
+    showTexture.value = true; // Automatically enable texture when loaded
   }
 
   /**
@@ -26,7 +18,7 @@ export function createDisplaySetters(state) {
    */
   function clearTextureMap() {
     textureMap.value = null;
-    useCustomTexture.value = false;
+    showTexture.value = false; // Disable texture when cleared
   }
 
   /**
@@ -56,19 +48,11 @@ export function createDisplaySetters(state) {
   }
 
   /**
-   * Set base color for mesh perimeter and bottom
+   * Set item color for mesh
    * @param {string} value - Hex color code
    */
-  function setBaseColor(value) {
-    baseColor.value = value;
-  }
-
-  /**
-   * Enable/disable custom texture usage
-   * @param {boolean} value
-   */
-  function setUseCustomTexture(value) {
-    useCustomTexture.value = value;
+  function setItemColor(value) {
+    itemColor.value = value;
   }
 
   return {
@@ -77,7 +61,6 @@ export function createDisplaySetters(state) {
     clearDepthMap,
     setShowTexture,
     setShowGrid,
-    setBaseColor,
-    setUseCustomTexture,
+    setItemColor,
   };
 }
