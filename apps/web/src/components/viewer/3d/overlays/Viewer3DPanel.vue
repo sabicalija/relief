@@ -28,10 +28,8 @@
       <!-- Dimensions panel - Mesh dimensions -->
       <DimensionsPanel v-else-if="activePanel === 'dimensions'" />
 
-      <!-- Placeholder for View panel -->
-      <div v-else-if="activePanel === 'view'" class="panel-placeholder">
-        <p>View panel coming soon...</p>
-      </div>
+      <!-- View panel - Scene helpers and visibility -->
+      <ViewPanel v-else-if="activePanel === 'view'" :mesh="mesh" />
     </div>
   </div>
 </template>
@@ -40,6 +38,7 @@
 import { ref } from "vue";
 import ItemPanel from "./panels/ItemPanel.vue";
 import DimensionsPanel from "./panels/DimensionsPanel.vue";
+import ViewPanel from "./panels/ViewPanel.vue";
 
 const props = defineProps({
   mesh: {

@@ -13,7 +13,7 @@
       <SceneLighting />
 
       <!-- Debug helpers -->
-      <SceneHelpers />
+      <SceneHelpers :mesh="mesh" />
 
       <!-- 2D mode: Show depth map as textured plane -->
       <DepthMapPlane v-if="imageStore.viewMode === '2d'" />

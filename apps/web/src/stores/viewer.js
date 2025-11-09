@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { createViewerContext } from "./viewer/context.js";
 import { createViewerStatus } from "./viewer/status.js";
+import { createViewerView } from "./viewer/view.js";
 
 /**
  * Viewer store - manages 3D viewer context and status
@@ -12,6 +13,9 @@ export const useViewerStore = defineStore("viewer", () => {
 
   // Create status module (status messages and indicators)
   const status = createViewerStatus();
+
+  // Create view module (scene helpers visibility and configuration)
+  const view = createViewerView();
 
   // Return flattened API (backward compatible with existing components)
   return {
@@ -43,5 +47,15 @@ export const useViewerStore = defineStore("viewer", () => {
     showGenerating: status.showGenerating,
     showSuccess: status.showSuccess,
     showError: status.showError,
+
+    // View state
+    showGrid: view.showGrid,
+    gridSize: view.gridSize,
+    gridDivisions: view.gridDivisions,
+
+    // View actions
+    setShowGrid: view.setShowGrid,
+    setGridSize: view.setGridSize,
+    setGridDivisions: view.setGridDivisions,
   };
 });
