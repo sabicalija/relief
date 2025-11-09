@@ -77,7 +77,7 @@ onUnmounted(() => {
 }
 
 .app-header {
-  padding: 1rem 2rem;
+  padding: 0rem 2rem 0.5rem;
   text-align: center;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
