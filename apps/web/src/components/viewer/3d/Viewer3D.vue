@@ -112,12 +112,12 @@ watch(
   { immediate: true }
 );
 
-// Canvas configuration (static)
-const canvasProps = {
-  clearColor: "#f0f0f0",
+// Canvas configuration (reactive background color)
+const canvasProps = computed(() => ({
+  clearColor: viewerStore.backgroundColor,
   antialias: true,
   alpha: false,
-};
+}));
 
 // Watch for projection mode changes and save camera state
 watch(projectionMode, async (newMode, oldMode) => {

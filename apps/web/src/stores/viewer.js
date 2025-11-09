@@ -52,10 +52,12 @@ export const useViewerStore = defineStore("viewer", () => {
     showGrid: view.showGrid,
     gridSize: view.gridSize,
     gridDivisions: view.gridDivisions,
+    backgroundColor: view.backgroundColor,
 
     // View actions
     setShowGrid: view.setShowGrid,
     setGridSize: view.setGridSize,
     setGridDivisions: view.setGridDivisions,
+    setBackgroundColor: view.setBackgroundColor,
   };
 });

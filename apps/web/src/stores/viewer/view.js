@@ -12,6 +12,9 @@ export function createViewerView() {
   const gridSize = ref(null);
   const gridDivisions = ref(null);
 
+  // Scene background color
+  const backgroundColor = ref("#f0f0f0");
+
   // Actions
   function setShowGrid(value) {
     showGrid.value = value;
@@ -25,15 +28,21 @@ export function createViewerView() {
     gridDivisions.value = value;
   }
 
+  function setBackgroundColor(value) {
+    backgroundColor.value = value;
+  }
+
   return {
     // State
     showGrid,
     gridSize,
     gridDivisions,
+    backgroundColor,
 
     // Actions
     setShowGrid,
     setGridSize,
     setGridDivisions,
+    setBackgroundColor,
   };
 }

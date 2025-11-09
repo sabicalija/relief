@@ -47,12 +47,21 @@
       </div>
     </div>
 
-    <!-- Lighting Section -->
+    <!-- Background Section -->
     <div class="section">
-      <div class="section-header">Lighting</div>
+      <div class="section-header">Background</div>
       <div class="property-group">
         <div class="property-row">
-          <span class="info-text">Lighting controls coming soon...</span>
+          <label class="param-label">Color</label>
+          <input type="color" class="color-input" :value="viewerStore.backgroundColor" @input="updateBackgroundColor" />
+          <input
+            type="text"
+            class="color-text-input"
+            :value="viewerStore.backgroundColor"
+            @input="updateBackgroundColorText"
+            pattern="#[0-9A-Fa-f]{6}"
+            placeholder="#f0f0f0"
+          />
         </div>
       </div>
     </div>
@@ -122,6 +131,18 @@ function updateGridDivisions(event) {
     if (!isNaN(parsed) && parsed > 0) {
       viewerStore.setGridDivisions(parsed);
     }
+  }
+}
+
+function updateBackgroundColor(event) {
+  viewerStore.setBackgroundColor(event.target.value);
+}
+
+function updateBackgroundColorText(event) {
+  const value = event.target.value;
+  // Validate hex color format
+  if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+    viewerStore.setBackgroundColor(value);
   }
 }
 </script>
@@ -203,6 +224,44 @@ function updateGridDivisions(event) {
   font-size: 12px;
   color: var(--text-secondary, #666);
   min-width: 30px;
+}
+
+.color-input {
+  width: 40px;
+  height: 28px;
+  padding: 2px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+  }
+}
+
+.color-text-input {
+  flex: 1;
+  padding: 6px 8px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-primary, #333);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  min-width: 0;
+
+  &:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+  }
+
+  &:invalid {
+    border-color: #dc3545;
+  }
 }
 
 .info-text {
