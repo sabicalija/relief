@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 70 100"
+   width="207.90001mm"
+   height="194.535mm"
+   viewBox="0 0 69.300003 65.500002"
    version="1.1"
    id="svg1"
    inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
-   sodipodi:docname="logo.svg"
+   sodipodi:docname="logo.monochrome.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -24,8 +24,8 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="0.91846942"
-     inkscape:cx="465.99265"
-     inkscape:cy="614.06508"
+     inkscape:cx="238.44017"
+     inkscape:cy="151.33873"
      inkscape:window-width="2560"
      inkscape:window-height="1403"
      inkscape:window-x="2560"
@@ -45,11 +45,11 @@
        gradientTransform="matrix(0.05363159,0,0,0.05236825,36.265831,29.77549)">
       <stop
          offset="0"
-         stop-color="#f9b063"
+         stop-color="#666666"
          id="stop1" />
       <stop
          offset="1"
-         stop-color="#ec3936"
+         stop-color="#333333"
          id="stop2" />
     </radialGradient>
     <radialGradient
@@ -63,12 +63,12 @@
       <stop
          offset="0"
          stop-opacity="0.2"
-         stop-color="#fad3aa"
+         stop-color="#cccccc"
          id="stop3" />
       <stop
          offset="1"
          stop-opacity="1"
-         stop-color="#f9b063"
+         stop-color="#666666"
          id="stop4" />
     </radialGradient>
     <radialGradient
@@ -82,73 +82,59 @@
       <stop
          offset="0"
          stop-opacity="0.75"
-         stop-color="#fae6d1"
+         stop-color="#eeeeee"
          id="stop5" />
       <stop
          offset="1"
          stop-opacity="0.05"
-         stop-color="#fad3aa"
+         stop-color="#cccccc"
          id="stop6" />
     </radialGradient>
   </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
-    <path
-       id="frame"
-       d="M 8 22 h 54 c 4 0 8 4 8 8 v 62 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 v -62 c 0 -4 4 -8 8 -8 z"
-       fill="none"
-       stroke="#004563"
-       stroke-width="1" />
+     id="layer1"
+     transform="translate(-0.35500158,-34.5)">
     <path
        id="hill-left"
-       d="M 70 92 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 v -22 c 26 -18 25 15 70 15 z"
-       stroke="#004563"
-       fill="#08b7ba"
-       stroke-width="1" />
+       d="M 70,92 C 70,96 66,100 62,100 H 8 C 4,100 0,98 0,92 V 70 C 26,52 25,85 70,85 Z"
+       stroke="#000000"
+       stroke-width="1"
+       fill="#666666"
+       style="stroke:none" />
     <path
        id="hill-right"
-       d="M 70 92 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 c 41 0 42 -27 70 -15 z"
-       stroke="#004563"
-       fill="#50c074"
-       stroke-width="1" />
+       d="M 70,92 C 70,96 66,100 62,100 H 8 C 4,100 0,98 0,92 41,92 42,65 70,77 Z"
+       stroke="#000000"
+       stroke-width="1"
+       fill="#999999"
+       style="stroke:none" />
     <path
        id="balloon-body"
-       d="M 39 55 l -5 0 c -1 -4 -5 -5 -5 -10 c 0 -8 5 -10 10 -10 c 5 0 10 2 10 10 c 0 5 -4 6 -5 10 z"
+       d="M 43.104602,67.910311 H 34.752025 C 33.081509,61.228248 26.399447,59.557732 26.399447,51.205155 26.399447,37.841031 34.752025,34.5 43.104602,34.5 51.457179,34.5 59.809758,37.841031 59.809758,51.205155 59.809758,59.557732 53.127695,61.228248 51.457179,67.910311 Z"
        fill="url(#rg-balloon-body)"
-       style="fill:url(#rg-balloon-body)" />
-    <circle
-       id="balloon-shadow"
-       cx="38"
-       cy="44"
-       r="8"
-       fill="url(#rg-balloon-shadow)"
-       style="fill:url(#rg-balloon-shadow)" />
-    <ellipse
-       id="balloon-reflection"
-       cx="37"
-       cy="40"
-       rx="1.5"
-       ry="2"
-       fill="url(#rg-balloon-reflection)" />
+       style="fill:#aeaeae;fill-opacity:1;stroke-width:1.67051" />
     <path
        id="balloon-outline"
-       d="M 39 55 l -5 0 c -1 -4 -5 -5 -5 -10 c 0 -8 5 -10 10 -10 c 5 0 10 2 10 10 c 0 5 -4 6 -5 10 z"
+       d="M 39,61.089354 H 32.514792 C 31.21775,55.901187 26.029583,54.604145 26.029583,48.118937 26.029583,37.742603 32.514792,35.14852 39,35.14852 45.485208,35.14852 51.970417,37.742603 51.970417,48.118937 51.970417,54.604145 46.78225,55.901187 45.485208,61.089354 Z"
        fill="none"
-       stroke="#004563"
-       stroke-width="1" />
+       stroke="#000000"
+       stroke-width="1.29704"
+       style="stroke:none" />
     <path
        id="rope"
-       d="M 35 60 L 34 55 M 43 60 L 44 55 M 39 35 c -5 0 -7 5 -6 10 c 1 5 3 5 4 15 M 39 35 c 5 0 7 5 6 10 c -1 5 -3 5 -4 15 M 29 45 c 0 0 2 1 4 0 c 0 0 6 4 12 0 c 0 0 2 1 4 0"
+       d="M 33.811833,67.574562 32.514792,61.089354 M 44.188167,67.574562 45.485208,61.089354 M 39,35.14852 C 32.514792,35.14852 29.920708,41.633728 31.21775,48.118937 32.514792,54.604145 35.108875,54.604145 36.405917,67.574562 M 39,35.14852 C 45.485208,35.14852 48.079292,41.633728 46.78225,48.118937 45.485208,54.604145 42.891125,54.604145 41.594083,67.574562 M 26.029583,48.118937 C 26.029583,48.118937 28.623666,49.415978 31.21775,48.118937 31.21775,48.118937 39,53.307103 46.78225,48.118937 46.78225,48.118937 49.376334,49.415978 51.970417,48.118937"
        fill="none"
-       stroke="#004563"
-       stroke-width="1" />
+       stroke="#000000"
+       stroke-width="1.29704"
+       style="stroke:none" />
     <path
        id="basket"
-       d="M 35 60 h 8 l -1 6 h -6 z"
-       stroke="#004563"
-       fill="#08b7ba"
-       stroke-width="1" />
+       d="M 35.946276,71.095929 H 50.262929 L 48.473347,81.119022 H 37.735858 Z"
+       stroke="#000000"
+       stroke-width="1.72902"
+       fill="#666666"
+       style="fill:#787878;fill-opacity:1;stroke:none;stroke-width:1.72896;stroke-dasharray:none" />
   </g>
 </svg>

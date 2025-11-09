@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg width="210mm" height="297mm" viewBox="0 0 70 100" version="1.1" id="svg1" inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="logo.monochrome.svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+   <sodipodi:namedview id="namedview1" pagecolor="#ffffff" bordercolor="#000000" borderopacity="0.25" inkscape:showpageshadow="2"
+      inkscape:pageopacity="0.0" inkscape:pagecheckerboard="0" inkscape:deskcolor="#d1d1d1" inkscape:document-units="mm"
+      inkscape:zoom="0.45923471" inkscape:cx="52.260858" inkscape:cy="-50.083322" inkscape:window-width="2560" inkscape:window-height="1403"
+      inkscape:window-x="2560" inkscape:window-y="0" inkscape:window-maximized="1" inkscape:current-layer="layer1" />
+   <defs id="defs1">
+      <radialGradient id="rg-balloon-body" r="30" cx="38" cy="44" fx="38" fy="44" gradientUnits="userSpaceOnUse"
+         gradientTransform="matrix(0.05363159,0,0,0.05236825,36.265831,29.77549)">
+         <stop offset="0" stop-color="#666666" id="stop1" />
+         <stop offset="1" stop-color="#333333" id="stop2" />
+      </radialGradient>
+      <radialGradient id="rg-balloon-shadow" r="30" cx="38" cy="44" fx="38" fy="44" gradientUnits="userSpaceOnUse">
+         <stop offset="0" stop-opacity="0.2" stop-color="#cccccc" id="stop3" />
+         <stop offset="1" stop-opacity="1" stop-color="#666666" id="stop4" />
+      </radialGradient>
+      <radialGradient id="rg-balloon-reflection" r="15" fy="44" fx="38" cy="44" cx="38" gradientUnits="userSpaceOnUse">
+         <stop offset="0" stop-opacity="0.75" stop-color="#eeeeee" id="stop5" />
+         <stop offset="1" stop-opacity="0.05" stop-color="#cccccc" id="stop6" />
+      </radialGradient>
+   </defs>
+   <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1">
+      <path id="frame" d="M 8 22 h 54 c 4 0 8 4 8 8 v 62 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 v -62 c 0 -4 4 -8 8 -8 z" fill="none"
+         stroke="#000000" stroke-width="1" />
+      <path id="hill-left" d="M 70 92 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 v -22 c 26 -18 25 15 70 15 z" stroke="#000000"
+         stroke-width="1" fill="#666666" />
+      <path id="hill-right" d="M 70 92 c 0 4 -4 8 -8 8 h -54 c -4 0 -8 -2 -8 -8 c 41 0 42 -27 70 -15 z" stroke="#000000" stroke-width="1"
+         fill="#999999" />
+      <path id="balloon-body" d="M 39 55 l -5 0 c -1 -4 -5 -5 -5 -10 c 0 -8 5 -10 10 -10 c 5 0 10 2 10 10 c 0 5 -4 6 -5 10 z"
+         fill="url(#rg-balloon-body)" style="fill:url(#rg-balloon-body)" />
+      <circle id="balloon-shadow" cx="38" cy="44" r="8" fill="url(#rg-balloon-shadow)" style="fill:url(#rg-balloon-shadow)" />
+      <ellipse id="balloon-reflection" cx="37" cy="40" rx="1.5" ry="2" fill="url(#rg-balloon-reflection)" />
+      <path id="balloon-outline" d="M 39 55 l -5 0 c -1 -4 -5 -5 -5 -10 c 0 -8 5 -10 10 -10 c 5 0 10 2 10 10 c 0 5 -4 6 -5 10 z" fill="none"
+         stroke="#000000" stroke-width="1" />
+      <path id="rope"
+         d="M 35 60 L 34 55 M 43 60 L 44 55 M 39 35 c -5 0 -7 5 -6 10 c 1 5 3 5 4 15 M 39 35 c 5 0 7 5 6 10 c -1 5 -3 5 -4 15 M 29 45 c 0 0 2 1 4 0 c 0 0 6 4 12 0 c 0 0 2 1 4 0"
+         fill="none" stroke="#000000" stroke-width="1" />
+      <path id="basket" d="M 35 60 h 8 l -1 6 h -6 z" stroke="#000000" stroke-width="1" fill="#666666" />
+   </g>
+</svg>
