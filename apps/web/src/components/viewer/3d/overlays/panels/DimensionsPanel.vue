@@ -1,77 +1,77 @@
 <template>
   <div class="dimensions-panel">
-    <!-- Width -->
-    <div class="property-group">
-      <div class="property-label">Width:</div>
-      <div class="property-row">
-        <input
-          type="number"
-          class="property-input"
-          v-model="localWidth"
-          :placeholder="actualMeshDimensions.width.toFixed(1)"
-          min="1"
-          step="1"
-          @focus="handleFocus('width')"
-          @blur="handleBlur"
-        />
-        <span class="property-unit">mm</span>
+    <!-- Size Section -->
+    <div class="section">
+      <div class="section-header">Size</div>
+      <div class="property-group">
+        <div class="property-row">
+          <label class="param-label">Width</label>
+          <input
+            type="number"
+            class="property-input"
+            v-model="localWidth"
+            :placeholder="actualMeshDimensions.width.toFixed(1)"
+            min="1"
+            step="1"
+            @focus="handleFocus('width')"
+            @blur="handleBlur"
+          />
+          <span class="property-unit">mm</span>
+        </div>
+        <p class="property-hint">X-axis (horizontal)</p>
+
+        <div class="property-row">
+          <label class="param-label">Height</label>
+          <input
+            type="number"
+            class="property-input"
+            v-model="localHeight"
+            :placeholder="actualMeshDimensions.height.toFixed(1)"
+            min="1"
+            step="1"
+            @focus="handleFocus('height')"
+            @blur="handleBlur"
+          />
+          <span class="property-unit">mm</span>
+        </div>
+        <p class="property-hint">Y-axis (vertical)</p>
       </div>
-      <p class="property-hint">X-axis (horizontal)</p>
     </div>
 
-    <!-- Height -->
-    <div class="property-group">
-      <div class="property-label">Height:</div>
-      <div class="property-row">
-        <input
-          type="number"
-          class="property-input"
-          v-model="localHeight"
-          :placeholder="actualMeshDimensions.height.toFixed(1)"
-          min="1"
-          step="1"
-          @focus="handleFocus('height')"
-          @blur="handleBlur"
-        />
-        <span class="property-unit">mm</span>
-      </div>
-      <p class="property-hint">Y-axis (vertical)</p>
-    </div>
+    <!-- Relief Section -->
+    <div class="section">
+      <div class="section-header">Relief</div>
+      <div class="property-group">
+        <div class="property-row">
+          <label class="param-label">Depth</label>
+          <input
+            type="number"
+            class="property-input"
+            v-model="localDepth"
+            min="0.1"
+            step="0.1"
+            @focus="handleFocus('depth')"
+            @blur="handleBlur"
+          />
+          <span class="property-unit">mm</span>
+        </div>
+        <p class="property-hint">Z-axis (depth)</p>
 
-    <!-- Depth -->
-    <div class="property-group">
-      <div class="property-label">Depth:</div>
-      <div class="property-row">
-        <input
-          type="number"
-          class="property-input"
-          v-model="localDepth"
-          min="0.1"
-          step="0.1"
-          @focus="handleFocus('depth')"
-          @blur="handleBlur"
-        />
-        <span class="property-unit">mm</span>
+        <div class="property-row">
+          <label class="param-label">Base</label>
+          <input
+            type="number"
+            class="property-input"
+            v-model="localBaseThickness"
+            min="0"
+            step="0.1"
+            @focus="handleFocus('baseThickness')"
+            @blur="handleBlur"
+          />
+          <span class="property-unit">mm</span>
+        </div>
+        <p class="property-hint">Z-axis (below surface)</p>
       </div>
-      <p class="property-hint">Z-axis (depth)</p>
-    </div>
-
-    <!-- Base Thickness -->
-    <div class="property-group">
-      <div class="property-label">Base Thickness:</div>
-      <div class="property-row">
-        <input
-          type="number"
-          class="property-input"
-          v-model="localBaseThickness"
-          min="0"
-          step="0.1"
-          @focus="handleFocus('baseThickness')"
-          @blur="handleBlur"
-        />
-        <span class="property-unit">mm</span>
-      </div>
-      <p class="property-hint">Z-axis (depth, below surface)</p>
     </div>
   </div>
 </template>
@@ -173,27 +173,39 @@ watch(
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .property-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.property-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary, #333);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  gap: 8px;
 }
 
 .property-row {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.param-label {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  min-width: 70px;
 }
 
 .property-input {
@@ -220,16 +232,15 @@ watch(
 
 .property-unit {
   font-size: 12px;
-  color: #666;
-  font-weight: 500;
-  min-width: 24px;
-  text-align: left;
+  color: var(--text-secondary, #666);
+  min-width: 30px;
 }
 
 .property-hint {
   font-size: 11px;
-  color: #666;
+  color: var(--text-secondary, #999);
   margin: 0;
   font-style: italic;
+  padding-left: 78px; /* Align with input (70px label + 8px gap) */
 }
 </style>

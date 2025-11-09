@@ -1,60 +1,82 @@
 <template>
   <div class="item-panel">
-    <!-- Location -->
-    <div class="property-group">
-      <div class="property-label">Location:</div>
-      <div class="property-row">
-        <label class="axis-label">X</label>
-        <input
-          type="number"
-          class="property-input"
-          :value="location.x"
-          @input="updateLocation('x', $event)"
-          step="0.1"
-        />
-        <span class="property-unit">mm</span>
-      </div>
-      <div class="property-row">
-        <label class="axis-label">Y</label>
-        <input
-          type="number"
-          class="property-input"
-          :value="location.y"
-          @input="updateLocation('y', $event)"
-          step="0.1"
-        />
-        <span class="property-unit">mm</span>
-      </div>
-      <div class="property-row">
-        <label class="axis-label">Z</label>
-        <input
-          type="number"
-          class="property-input"
-          :value="location.z"
-          @input="updateLocation('z', $event)"
-          step="0.1"
-        />
-        <span class="property-unit">mm</span>
+    <!-- Location Section -->
+    <div class="section">
+      <div class="section-header">Location</div>
+      <div class="property-group">
+        <div class="property-row">
+          <label class="param-label">X</label>
+          <input
+            type="number"
+            class="property-input"
+            :value="location.x"
+            @input="updateLocation('x', $event)"
+            step="0.1"
+          />
+          <span class="property-unit">mm</span>
+        </div>
+        <div class="property-row">
+          <label class="param-label">Y</label>
+          <input
+            type="number"
+            class="property-input"
+            :value="location.y"
+            @input="updateLocation('y', $event)"
+            step="0.1"
+          />
+          <span class="property-unit">mm</span>
+        </div>
+        <div class="property-row">
+          <label class="param-label">Z</label>
+          <input
+            type="number"
+            class="property-input"
+            :value="location.z"
+            @input="updateLocation('z', $event)"
+            step="0.1"
+          />
+          <span class="property-unit">mm</span>
+        </div>
       </div>
     </div>
 
-    <!-- Rotation -->
-    <div class="property-group">
-      <div class="property-label">Rotation:</div>
-      <div class="property-row">
-        <label class="axis-label">X</label>
-        <input type="number" class="property-input" :value="rotation.x" @input="updateRotation('x', $event)" step="1" />
-        <span class="property-unit">°</span>
-      </div>
-      <div class="property-row">
-        <label class="axis-label">Y</label>
-        <input type="number" class="property-input" :value="rotation.y" @input="updateRotation('y', $event)" step="1" />
-        <span class="property-unit">°</span>
-      </div>
-      <div class="property-row">
-        <label class="axis-label">Z</label>
-        <input type="number" class="property-input" :value="rotation.z" @input="updateRotation('z', $event)" step="1" />
-        <span class="property-unit">°</span>
+    <!-- Rotation Section -->
+    <div class="section">
+      <div class="section-header">Rotation</div>
+      <div class="property-group">
+        <div class="property-row">
+          <label class="param-label">X</label>
+          <input
+            type="number"
+            class="property-input"
+            :value="rotation.x"
+            @input="updateRotation('x', $event)"
+            step="1"
+          />
+          <span class="property-unit">°</span>
+        </div>
+        <div class="property-row">
+          <label class="param-label">Y</label>
+          <input
+            type="number"
+            class="property-input"
+            :value="rotation.y"
+            @input="updateRotation('y', $event)"
+            step="1"
+          />
+          <span class="property-unit">°</span>
+        </div>
+        <div class="property-row">
+          <label class="param-label">Z</label>
+          <input
+            type="number"
+            class="property-input"
+            :value="rotation.z"
+            @input="updateRotation('z', $event)"
+            step="1"
+          />
+          <span class="property-unit">°</span>
+        </div>
       </div>
     </div>
   </div>
@@ -195,69 +217,65 @@ function updateRotation(axis, event) {
 
 <style scoped lang="scss">
 .item-panel {
-  padding: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-// Property groups
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 .property-group {
-  margin-bottom: 20px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.property-label {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-// Property row (axis input)
 .property-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
 }
 
-.axis-label {
-  min-width: 20px;
+.param-label {
   font-size: 12px;
-  color: #666;
-  font-weight: 600;
+  color: var(--text-secondary, #666);
+  min-width: 70px;
 }
 
 .property-input {
   flex: 1;
-  height: 32px;
-  padding: 0 10px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 6px 8px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
-  color: var(--text-primary, #333);
   font-size: 13px;
-  transition: all 0.2s ease;
+  color: var(--text-primary, #333);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  min-width: 0;
 
   &:focus {
     outline: none;
     border-color: #0066cc;
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-  }
-
-  &:hover:not(:focus) {
-    border-color: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
   }
 }
 
 .property-unit {
-  min-width: 24px;
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary, #666);
+  min-width: 30px;
 }
 </style>
