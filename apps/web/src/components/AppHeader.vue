@@ -8,6 +8,7 @@
           <p class="subtitle">
             Schauen tut man mit den <span class="strikethrough">Augen</span> <span class="replacement">Händen</span>.
           </p>
+          <p class="attribution">Austrian Proverb</p>
         </div>
       </div>
     </header>
@@ -90,6 +91,15 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 
+.attribution {
+  font-size: 0.75rem;
+  color: #adb5bd;
+  font-style: italic;
+  text-align: right;
+  padding-top: 0.4rem;
+  width: 100%;
+}
+
 .brand .logo {
   flex: 0 0 auto;
   overflow: visible;
@@ -99,6 +109,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  padding-top: 1.3rem;
 }
 
 h1 {
@@ -106,6 +117,7 @@ h1 {
   color: #2c3e50;
   margin: 0;
   margin-bottom: 0.25rem;
+  line-height: 1;
 }
 
 .subtitle {
