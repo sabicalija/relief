@@ -6,7 +6,8 @@
         <div class="brand-text">
           <h1>Relief</h1>
           <p class="subtitle">
-            Schauen tut man mit den <span class="strikethrough">Augen</span> <span class="replacement">Händen</span>.
+            Schauen tut man mit den <span class="strikethrough">Augen</span><span class="period">.</span
+            ><span class="replacement"> Händen<span class="final-period">.</span></span>
           </p>
           <p class="attribution">Austrian Proverb</p>
         </div>
@@ -109,7 +110,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding-top: 1.3rem;
+  padding-top: 1.2rem;
 }
 
 h1 {
@@ -128,13 +129,59 @@ h1 {
 }
 
 .strikethrough {
-  text-decoration: line-through;
+  position: relative;
+  text-decoration: none;
   color: #adb5bd;
 }
 
+.strikethrough::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: #adb5bd;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: strikethrough 0.8s ease-out 0.5s forwards;
+}
+
+@keyframes strikethrough {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.period {
+  display: inline-block;
+  opacity: 1;
+  animation: hidePeriod 0.4s ease-in-out 1.3s forwards;
+}
+
+@keyframes hidePeriod {
+  to {
+    opacity: 0;
+  }
+}
+
 .replacement {
+  display: inline-block;
   color: var(--color-primary);
   font-weight: 600;
+  opacity: 0;
+  animation: fadeIn 0.4s ease-in 1.3s forwards;
+}
+
+.final-period {
+  color: #6c757d;
+  font-weight: normal;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
 }
 
 .toggle-button {
