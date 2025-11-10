@@ -23,10 +23,6 @@ export function exportToSTL(mesh) {
   // This bakes the rotation and scale into the vertex positions
   cleanGeometry.applyMatrix4(mesh.matrix);
 
-  // Apply additional 180° rotation around X-axis for correct STL orientation
-  const fixRotation = new THREE.Matrix4().makeRotationX(Math.PI);
-  cleanGeometry.applyMatrix4(fixRotation);
-
   // Check if we need to flip face winding due to negative scale
   // Negative scale inverts face normals, so we need to reverse the winding order
   const scale = mesh.scale;

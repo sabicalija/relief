@@ -1,10 +1,11 @@
 <template>
   <div class="transform-mode-selector">
     <button
-      v-for="mode in modes"
+      v-for="(mode, index) in modes"
       :key="mode.value"
       :class="['mode-button', { active: modelValue === mode.value }]"
       :title="mode.label"
+      :tabindex="4 + index"
       @click="handleModeClick(mode.value)"
     >
       <font-awesome-icon :icon="mode.icon" />

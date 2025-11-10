@@ -1,16 +1,17 @@
 <template>
   <div class="projection-mode-selector">
     <!-- Camera reset button -->
-    <button class="mode-button reset-button" title="Reset Camera (Home)" @click="handleResetCamera">
+    <button class="mode-button reset-button" title="Reset Camera (Home)" @click="handleResetCamera" tabindex="7">
       <font-awesome-icon icon="camera-rotate" />
     </button>
 
     <!-- Projection mode buttons -->
     <button
-      v-for="mode in modes"
+      v-for="(mode, index) in modes"
       :key="mode.value"
       :class="['mode-button', { active: modelValue === mode.value }]"
       :title="mode.label"
+      :tabindex="8 + index"
       @click="handleClick(mode.value)"
     >
       <font-awesome-icon :icon="mode.icon" />

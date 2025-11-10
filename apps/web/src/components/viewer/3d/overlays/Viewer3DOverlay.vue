@@ -30,7 +30,12 @@
 
     <!-- Subtle toggle button at far right edge (Blender-style) -->
     <div v-if="showTransformControls" class="overlay-toggle" :class="{ 'panel-open': isPanelOpen }">
-      <button class="toggle-button" :title="isPanelOpen ? 'Hide Panel' : 'Show Panel'" @click="togglePanel">
+      <button
+        class="toggle-button"
+        :title="isPanelOpen ? 'Hide Panel' : 'Show Panel'"
+        @click="togglePanel"
+        tabindex="10"
+      >
         <font-awesome-icon :icon="isPanelOpen ? 'chevron-right' : 'chevron-left'" />
       </button>
     </div>
