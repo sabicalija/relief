@@ -46,9 +46,9 @@
           <span class="format-name">OBJ</span>
           <span class="format-desc">Text format, universal compatibility</span>
         </button>
-        <button @click="handleDownload('ply')" class="format-option" disabled>
+        <button @click="handleDownload('ply')" class="format-option">
           <span class="format-name">PLY</span>
-          <span class="format-desc">Coming soon</span>
+          <span class="format-desc">Binary format, point cloud data</span>
         </button>
       </div>
     </div>
@@ -62,6 +62,7 @@ import { useViewerStore } from "../../../stores/viewer";
 import { useMeshGeneration } from "../../../composables/useMeshGeneration";
 import { exportToSTL, download as downloadSTL } from "../../../utils/mesh/stl";
 import { exportToOBJ, download as downloadOBJ } from "../../../utils/mesh/obj";
+import { exportToPLY, download as downloadPLY } from "../../../utils/mesh/ply";
 
 const imageStore = useImageStore();
 const viewerStore = useViewerStore();
@@ -129,10 +130,10 @@ async function handleDownload(format = "stl") {
         downloadOBJ(blob, filename);
         break;
       case "ply":
-        // TODO: Implement PLY export
-        viewerStore.removeStatus(statusId);
-        viewerStore.showError("PLY export not yet implemented", 3000);
-        return;
+        // Pass base filename as object name (without extension)
+        blob = exportToPLY(mesh.value, baseFilename);
+        downloadPLY(blob, filename);
+        break;
       default:
         throw new Error(`Unsupported format: ${format}`);
     }
