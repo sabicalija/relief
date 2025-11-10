@@ -12,50 +12,54 @@ import { STLExporter } from "three/examples/jsm/exporters/STLExporter.js";
 export function exportToSTL(mesh) {
   const exporter = new STLExporter();
 
-  // STL format doesn't support materials or groups, so we need to create a clean mesh
   // Clone the geometry to avoid modifying the original
-  const cleanGeometry = mesh.geometry.clone();
+  let cleanGeometry = mesh.geometry.clone();
 
-  // Remove material groups (they cause issues with STL export)
+  // Remove material groups (STL doesn't support them)
   cleanGeometry.clearGroups();
 
-  // Apply the mesh's transformations directly to the geometry
-  // This bakes the rotation and scale into the vertex positions
-  cleanGeometry.applyMatrix4(mesh.matrix);
+  // Apply the original mesh's world transform to bake it into the geometry
+  const tempMesh = new THREE.Mesh(cleanGeometry, new THREE.MeshBasicMaterial());
+  tempMesh.position.copy(mesh.position);
+  tempMesh.rotation.copy(mesh.rotation);
+  tempMesh.scale.copy(mesh.scale);
+  tempMesh.updateMatrix();
+  cleanGeometry.applyMatrix4(tempMesh.matrix);
 
-  // Check if we need to flip face winding due to negative scale
-  // Negative scale inverts face normals, so we need to reverse the winding order
-  const scale = mesh.scale;
-  const hasNegativeScale = scale.x * scale.y * scale.z < 0;
-
-  if (hasNegativeScale) {
-    // Flip all triangle indices to reverse winding order
-    const index = cleanGeometry.index;
-    if (index) {
-      const indices = index.array;
-      for (let i = 0; i < indices.length; i += 3) {
-        // Swap first and third vertex of each triangle
-        const temp = indices[i];
-        indices[i] = indices[i + 2];
-        indices[i + 2] = temp;
-      }
-      index.needsUpdate = true;
+  // IMPORTANT: Flip all face winding orders for STL export
+  // Three.js and STL use opposite winding conventions
+  // STL expects counter-clockwise winding when viewed from outside (right-hand rule)
+  const index = cleanGeometry.index;
+  if (index) {
+    const indices = index.array;
+    for (let i = 0; i < indices.length; i += 3) {
+      // Swap first and third vertex to reverse winding
+      const temp = indices[i];
+      indices[i] = indices[i + 2];
+      indices[i + 2] = temp;
     }
+    index.needsUpdate = true;
+    console.log(`🔄 Reversed winding order for ${(indices.length / 3).toLocaleString()} triangles`);
   }
 
-  // Compute normals after applying transformations and fixing winding
+  // Compute vertex normals after winding fix
   cleanGeometry.computeVertexNormals();
 
-  // Create a temporary mesh with identity transform for export
-  const exportMesh = new THREE.Mesh(cleanGeometry, new THREE.MeshBasicMaterial());
-  // No need to copy transforms - they're already baked into the geometry
+  // Create final export mesh with identity transform
+  const finalMesh = new THREE.Mesh(cleanGeometry, new THREE.MeshBasicMaterial());
 
-  // Use binary format for better performance and to avoid string length limits
-  // Binary STL is much smaller and faster to generate than ASCII
-  const stlBinary = exporter.parse(exportMesh, { binary: true });
+  // Use binary format for better performance
+  const stlBinary = exporter.parse(finalMesh, { binary: true });
   const stlBlob = new Blob([stlBinary], { type: "application/octet-stream" });
 
   console.log(`📦 STL exported: ${(stlBlob.size / (1024 * 1024)).toFixed(2)} MB (binary format)`);
+  console.log(`   Vertices: ${cleanGeometry.attributes.position.count.toLocaleString()}`);
+  console.log(
+    `   Triangles: ${(cleanGeometry.index
+      ? cleanGeometry.index.count / 3
+      : cleanGeometry.attributes.position.count / 3
+    ).toLocaleString()}`
+  );
 
   // Clean up
   cleanGeometry.dispose();
