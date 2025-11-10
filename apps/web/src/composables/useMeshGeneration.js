@@ -74,15 +74,18 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
     try {
       let newMesh;
 
+      // Check if simplification will be applied (needs status indicator)
+      const willSimplify = config.geometrySimplification < 0.99;
+
       if (showStatusMessages) {
         // Ensure minimum display time for status message (initial generation)
         [newMesh] = await Promise.all([
-          createMeshFromDepthMap(depthMapData, config),
+          createMeshFromDepthMap(depthMapData, config, willSimplify ? viewerStore : null),
           new Promise((resolve) => setTimeout(resolve, 300)), // Minimum 300ms display
         ]);
       } else {
-        // No minimum delay for parameter changes (faster feedback)
-        newMesh = await createMeshFromDepthMap(depthMapData, config);
+        // No minimum delay for parameter changes, but still show status for simplification
+        newMesh = await createMeshFromDepthMap(depthMapData, config, willSimplify ? viewerStore : null);
       }
 
       // Dispose old mesh completely

@@ -17,6 +17,7 @@ import {
 } from "../image/index.js";
 import { buildMeshGeometry } from "./geometry.js";
 import { createMeshMaterials } from "./material.js";
+import { simplifyGeometry } from "./simplify.js";
 import { exportToSTL, download } from "./stl.js";
 
 // Re-export all public functions
@@ -41,9 +42,10 @@ export {
  * Convert a depth map image to a 3D mesh
  * @param {string} imageDataUrl - Base64 data URL of the depth map image
  * @param {Object} config - Configuration parameters
+ * @param {Object} statusStore - Optional viewer store for status updates during simplification
  * @returns {Promise<THREE.Mesh>}
  */
-export async function createMeshFromDepthMap(imageDataUrl, config) {
+export async function createMeshFromDepthMap(imageDataUrl, config, statusStore = null) {
   const {
     targetDepthMm = 20.0,
     baseThicknessMm = 10.0,
@@ -92,15 +94,33 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     baseThicknessMm,
   });
 
+  // Apply geometry simplification if enabled
+  const geometrySimplification = config.geometrySimplification ?? 1.0;
+  const finalGeometry = await simplifyGeometry(geometry, geometrySimplification, statusStore);
+
+  // Check if simplification removed UVs
+  const hasUVs = finalGeometry.attributes.uv !== undefined;
+  const wasSimplified = geometrySimplification < 0.99;
+
+  console.log("🔍 Final geometry check:", {
+    hasUVs,
+    wasSimplified,
+    vertexCount: finalGeometry.attributes.position.count,
+    hasIndex: !!finalGeometry.index,
+    hasNormal: !!finalGeometry.attributes.normal,
+    attributes: Object.keys(finalGeometry.attributes),
+  });
+
   // Create materials for the mesh
+  // If simplified, disable textures since UVs are lost
   const materials = createMeshMaterials({
-    showTexture: config.showTexture,
-    textureMap: config.textureMap,
+    showTexture: hasUVs && config.showTexture,
+    textureMap: hasUVs ? config.textureMap : null,
     imageDataUrl,
     itemColor: config.itemColor,
   });
 
-  const mesh = new THREE.Mesh(geometry, materials);
+  const mesh = new THREE.Mesh(finalGeometry, materials);
 
   // Store mesh resolution as user data for display
   mesh.userData.resolution = {
@@ -108,6 +128,10 @@ export async function createMeshFromDepthMap(imageDataUrl, config) {
     height: segmentsY + 1,
     total: (segmentsX + 1) * (segmentsY + 1),
   };
+
+  // Store simplification info
+  mesh.userData.simplified = wasSimplified;
+  mesh.userData.hasTexture = hasUVs && config.showTexture;
 
   // No rotation needed - mesh is built in Blender coordinate system
   // X = width (right), Y = depth (forward), Z = height (up)

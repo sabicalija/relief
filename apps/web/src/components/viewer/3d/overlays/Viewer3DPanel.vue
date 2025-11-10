@@ -20,6 +20,14 @@
       >
         <font-awesome-icon icon="palette" />
       </button>
+      <button
+        class="nav-button"
+        :class="{ active: activePanel === 'quality' }"
+        title="Quality"
+        @click="activePanel = 'quality'"
+      >
+        <font-awesome-icon icon="sliders-h" />
+      </button>
       <button class="nav-button" :class="{ active: activePanel === 'view' }" title="View" @click="activePanel = 'view'">
         <font-awesome-icon icon="eye" />
       </button>
@@ -34,6 +42,9 @@
       <!-- Material panel - Color and texture -->
       <MaterialPanel v-else-if="activePanel === 'material'" />
 
+      <!-- Quality panel - Simplification and stats -->
+      <QualityPanel v-else-if="activePanel === 'quality'" :mesh="mesh" />
+
       <!-- View panel - Scene helpers and visibility -->
       <ViewPanel v-else-if="activePanel === 'view'" :mesh="mesh" />
     </div>
@@ -45,6 +56,7 @@ import { ref } from "vue";
 import ItemPanel from "./panels/ItemPanel.vue";
 import DimensionsPanel from "./panels/DimensionsPanel.vue";
 import MaterialPanel from "./panels/MaterialPanel.vue";
+import QualityPanel from "./panels/QualityPanel.vue";
 import ViewPanel from "./panels/ViewPanel.vue";
 
 const props = defineProps({

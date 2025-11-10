@@ -229,13 +229,39 @@ Don't create props for data already in store - components should access store di
 
 Split large components into focused sub-components:
 
+**Legacy Components (avoid for new features):**
+
+- Controls.vue - Legacy parameter controls panel (pre-viewer architecture)
+- controls/ - Legacy control components (NumberInput, SimplificationSlider, etc.)
+
+**Modern Viewer Architecture:**
+
 - Upload.vue - File upload button
 - Preview.vue - Image preview with drag & drop
 - Viewer.vue - Main 3D viewer wrapper
-- Controls.vue - Parameter controls panel
 - DemoGallery.vue - Demo image gallery
-- controls/ - Individual control components
-- viewer/ - Modular viewer components (Viewer2D, Viewer3D, ViewerOverlay, Viewer3DOverlay, ViewerPlaceholder)
+- viewer/ - Modular viewer components:
+  - 2d/Viewer2D.vue - 2D depth map view
+  - 3d/Viewer3D.vue - 3D mesh view
+  - shared/ViewerOverlay.vue - Top-left overlay (2D/3D toggle, download button)
+  - 3d/overlays/Viewer3DOverlay.vue - Bottom-right status indicators
+  - 3d/overlays/Viewer3DPanel.vue - Right-side panel with tabs
+  - 3d/overlays/panels/ - Panel components:
+    - ItemPanel.vue - Transform properties (location, rotation)
+    - DimensionsPanel.vue - Physical dimensions
+    - MaterialPanel.vue - Color and texture settings
+    - QualityPanel.vue - Geometry simplification and mesh statistics
+    - ViewPanel.vue - Scene helpers and visibility
+  - shared/ViewerPlaceholder.vue - Empty state
+
+**Where to Add New Features:**
+
+- **3D viewer controls** → Add to existing panel in `viewer/3d/overlays/panels/` or create new panel
+- **Mesh optimization** → QualityPanel.vue
+- **Visual settings** → MaterialPanel.vue or ViewPanel.vue
+- **Transform controls** → ItemPanel.vue
+- **Global UI** → ViewerOverlay.vue (top-left) or Viewer3DOverlay.vue (bottom-right)
+- **Do NOT add to** → Controls.vue or controls/ (legacy components)
 
 **Viewer Architecture:**
 
@@ -244,6 +270,7 @@ Split large components into focused sub-components:
 - Viewer.vue handles drag & drop, conditional rendering (v-if for content vs placeholder, v-show for 2D/3D toggle)
 - No heading in Viewer.vue - parent decides labeling
 - ViewerPlaceholder for empty state (no overlays when no content)
+- 3D panel tabs: ItemPanel (cube icon), DimensionsPanel (ruler icon), MaterialPanel (palette icon), QualityPanel (sliders icon), ViewPanel (eye icon)
 
 **Component Data Flow:**
 

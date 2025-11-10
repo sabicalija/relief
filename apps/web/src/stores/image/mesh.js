@@ -2,7 +2,7 @@
  * Mesh configuration parameters
  */
 export function createMeshSetters(state) {
-  const { targetDepthMm, baseThicknessMm, simplificationRatio } = state;
+  const { targetDepthMm, baseThicknessMm, simplificationRatio, geometrySimplification } = state;
 
   /**
    * Set target depth in millimeters
@@ -34,9 +34,20 @@ export function createMeshSetters(state) {
     simplificationRatio.value = Math.max(0.01, Math.min(1.0, parsed || 1.0));
   }
 
+  /**
+   * Set geometry simplification ratio (post-processing)
+   * @param {number|string} value - Ratio between 0.01 and 1.0
+   */
+  function setGeometrySimplification(value) {
+    const parsed = parseFloat(value);
+    // Validate: must be between 0.01 and 1.0
+    geometrySimplification.value = Math.max(0.01, Math.min(1.0, parsed || 1.0));
+  }
+
   return {
     setTargetDepthMm,
     setBaseThicknessMm,
     setSimplificationRatio,
+    setGeometrySimplification,
   };
 }

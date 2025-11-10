@@ -1,7 +1,7 @@
 <template>
   <div class="control-group">
     <label>
-      Resolution Scaling
+      Geometry Simplification
       <span class="value-display">{{ (localValue * 100).toFixed(0) }}%</span>
     </label>
     <input v-model.number="localValue" type="range" min="0.01" max="1" step="0.01" class="slider" />
@@ -10,15 +10,15 @@
         v-for="preset in presets"
         :key="preset"
         @click="setValue(preset)"
-        :class="{ active: Math.abs(store.simplificationRatio - preset) < 0.01 }"
+        :class="{ active: Math.abs(store.geometrySimplification - preset) < 0.01 }"
         class="btn-preset"
       >
         {{ (preset * 100).toFixed(0) }}%
       </button>
     </div>
     <p class="hint">
-      Scale down resolution before mesh generation. Works by reducing pixel density. 50% = half resolution (1/4
-      vertices), 10% = 1/10th resolution (1/100 vertices).
+      Reduce triangle count after mesh generation using edge collapse algorithm. Lower values create smaller files with
+      coarser surfaces. 50% ≈ half the triangles, 10% ≈ 1/10th the triangles.
     </p>
   </div>
 </template>
@@ -29,18 +29,18 @@ import { useDebounceFn } from "@vueuse/core";
 import { useImageStore } from "../../stores/image";
 
 const store = useImageStore();
-const localValue = ref(store.simplificationRatio);
-const presets = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+const localValue = ref(store.geometrySimplification);
+const presets = [0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0];
 
 const debouncedUpdate = useDebounceFn((value) => {
-  store.setSimplificationRatio(value);
+  store.setGeometrySimplification(value);
 }, 300);
 
 watch(localValue, debouncedUpdate);
 
 const setValue = (value) => {
   localValue.value = value;
-  store.setSimplificationRatio(value);
+  store.setGeometrySimplification(value);
 };
 </script>
 

@@ -19,6 +19,7 @@ export function createGetters(state) {
       targetWidthMm: state.targetWidthMm.value,
       targetHeightMm: state.targetHeightMm.value,
       maxResolution: effectiveResolution,
+      geometrySimplification: state.geometrySimplification.value,
       showTexture: state.showTexture.value,
       textureMap: state.textureMap.value, // Use custom texture if available, otherwise null
       itemColor: state.itemColor.value,

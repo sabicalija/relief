@@ -28,6 +28,7 @@ import {
   faPalette,
   faTimes,
   faDownload,
+  faSlidersH,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
@@ -52,7 +53,8 @@ library.add(
   faCameraRotate,
   faPalette,
   faTimes,
-  faDownload
+  faDownload,
+  faSlidersH
 );
 
 /**

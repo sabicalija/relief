@@ -19,6 +19,7 @@ export function createImageState() {
   const targetHeightMm = ref(null);
   const maxResolution = ref(1024); // Maximum resolution for mesh generation
   const simplificationRatio = ref(1.0); // Mesh simplification ratio (0.0-1.0, 1.0 = no simplification)
+  const geometrySimplification = ref(1.0); // Post-processing geometry simplification (0.0-1.0, 1.0 = no simplification)
 
   // Display options
   const showTexture = ref(false); // Toggle for texture projection (only shows when custom texture loaded)
@@ -50,6 +51,7 @@ export function createImageState() {
     targetHeightMm,
     maxResolution,
     simplificationRatio,
+    geometrySimplification,
     // Display
     showTexture,
     showGrid,
