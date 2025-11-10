@@ -40,15 +40,23 @@
       <div v-if="showFormatMenu" class="format-menu">
         <button @click="handleDownload('stl')" class="format-option">
           <span class="format-name">STL</span>
-          <span class="format-desc">Binary format, 3D printing</span>
+          <span class="format-desc">Binary, 3D printing</span>
         </button>
         <button @click="handleDownload('obj')" class="format-option">
           <span class="format-name">OBJ</span>
-          <span class="format-desc">Text format, universal compatibility</span>
+          <span class="format-desc">Text, universal compatibility</span>
         </button>
         <button @click="handleDownload('ply')" class="format-option">
           <span class="format-name">PLY</span>
-          <span class="format-desc">Binary format, point cloud data</span>
+          <span class="format-desc">Binary, point clouds</span>
+        </button>
+        <button @click="handleDownload('glb')" class="format-option">
+          <span class="format-name">GLB</span>
+          <span class="format-desc">Web 3D standard, with textures</span>
+        </button>
+        <button @click="handleDownload('usdz')" class="format-option">
+          <span class="format-name">USDZ</span>
+          <span class="format-desc">Apple AR, with textures</span>
         </button>
       </div>
     </div>
@@ -63,6 +71,8 @@ import { useMeshGeneration } from "../../../composables/useMeshGeneration";
 import { exportToSTL, download as downloadSTL } from "../../../utils/mesh/stl";
 import { exportToOBJ, download as downloadOBJ } from "../../../utils/mesh/obj";
 import { exportToPLY, download as downloadPLY } from "../../../utils/mesh/ply";
+import { exportToGLTF, download as downloadGLTF } from "../../../utils/mesh/gltf";
+import { exportToUSDZ, download as downloadUSDZ } from "../../../utils/mesh/usdz";
 
 const imageStore = useImageStore();
 const viewerStore = useViewerStore();
@@ -133,6 +143,14 @@ async function handleDownload(format = "stl") {
         // Pass base filename as object name (without extension)
         blob = exportToPLY(mesh.value, baseFilename);
         downloadPLY(blob, filename);
+        break;
+      case "glb":
+        blob = await exportToGLTF(mesh.value, baseFilename, true);
+        downloadGLTF(blob, filename);
+        break;
+      case "usdz":
+        blob = await exportToUSDZ(mesh.value, baseFilename);
+        downloadUSDZ(blob, filename);
         break;
       default:
         throw new Error(`Unsupported format: ${format}`);
