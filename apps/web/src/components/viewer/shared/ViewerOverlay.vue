@@ -42,9 +42,9 @@
           <span class="format-name">STL</span>
           <span class="format-desc">Binary format, 3D printing</span>
         </button>
-        <button @click="handleDownload('obj')" class="format-option" disabled>
+        <button @click="handleDownload('obj')" class="format-option">
           <span class="format-name">OBJ</span>
-          <span class="format-desc">Coming soon</span>
+          <span class="format-desc">Text format, universal compatibility</span>
         </button>
         <button @click="handleDownload('ply')" class="format-option" disabled>
           <span class="format-name">PLY</span>
@@ -60,7 +60,8 @@ import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useImageStore } from "../../../stores/image";
 import { useViewerStore } from "../../../stores/viewer";
 import { useMeshGeneration } from "../../../composables/useMeshGeneration";
-import { exportToSTL, download } from "../../../utils/mesh/stl";
+import { exportToSTL, download as downloadSTL } from "../../../utils/mesh/stl";
+import { exportToOBJ, download as downloadOBJ } from "../../../utils/mesh/obj";
 
 const imageStore = useImageStore();
 const viewerStore = useViewerStore();
@@ -95,11 +96,20 @@ onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
 });
 
-function handleDownload(format = "stl") {
+async function handleDownload(format = "stl") {
   if (!mesh.value) return;
 
   // Close format menu
   showFormatMenu.value = false;
+
+  // Show processing status immediately
+  const statusId = viewerStore.addStatus(`Exporting ${format.toUpperCase()}...`, "spinner", {
+    spin: true,
+    priority: 10,
+  });
+
+  // Give browser time to render the status (100ms should be visible to user)
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   try {
     // Generate filename from depth map filename or use default
@@ -111,26 +121,28 @@ function handleDownload(format = "stl") {
     switch (format) {
       case "stl":
         blob = exportToSTL(mesh.value);
+        downloadSTL(blob, filename);
         break;
       case "obj":
-        // TODO: Implement OBJ export
-        viewerStore.showError("OBJ export not yet implemented", 3000);
-        return;
+        // Pass base filename as object name (without extension)
+        blob = exportToOBJ(mesh.value, baseFilename);
+        downloadOBJ(blob, filename);
+        break;
       case "ply":
         // TODO: Implement PLY export
+        viewerStore.removeStatus(statusId);
         viewerStore.showError("PLY export not yet implemented", 3000);
         return;
       default:
         throw new Error(`Unsupported format: ${format}`);
     }
 
-    // Download
-    download(blob, filename);
-
-    // Show success message
+    // Remove processing status and show success
+    viewerStore.removeStatus(statusId);
     viewerStore.showSuccess(`Downloaded ${filename}`, 2000);
   } catch (error) {
     console.error("Error exporting:", error);
+    viewerStore.removeStatus(statusId);
     viewerStore.showError(`Export failed: ${error.message}`, 5000);
   }
 }
