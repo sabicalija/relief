@@ -10,6 +10,7 @@ export function createImageState() {
   const textureMap = ref(null); // Optional separate texture for mesh
   const imageDimensions = ref(null); // Store original image dimensions
   const depthMapFilename = ref(null); // Original filename of the depth map
+  const depthMapFileSize = ref(null); // File size in bytes
   const viewMode = ref("3d"); // "2d" for depth map, "3d" for STL viewer
 
   // Relief config parameters - all in mm for consistency
@@ -43,6 +44,7 @@ export function createImageState() {
     textureMap,
     imageDimensions,
     depthMapFilename,
+    depthMapFileSize,
     viewMode,
     // Mesh config
     targetDepthMm,

@@ -3,7 +3,7 @@
  * Handles loading depth maps from files, URLs, and data URLs
  */
 export function createLoaders(state) {
-  const { depthMap, textureMap, imageDimensions, depthMapFilename, showTexture, viewMode } = state;
+  const { depthMap, textureMap, imageDimensions, depthMapFilename, depthMapFileSize, showTexture, viewMode } = state;
 
   /**
    * Load a depth map from a File object
@@ -40,6 +40,7 @@ export function createLoaders(state) {
           textureMap.value = null; // No custom texture initially
           showTexture.value = true; // Use depth map as texture by default
           depthMapFilename.value = file.name;
+          depthMapFileSize.value = file.size; // Store file size in bytes
 
           // Switch to 3D view
           viewMode.value = "3d";
@@ -97,6 +98,9 @@ export function createLoaders(state) {
       const depthResponse = await fetch(depthUrl);
       if (!depthResponse.ok) throw new Error(`Failed to fetch depth map: ${depthResponse.status}`);
       const depthBlob = await depthResponse.blob();
+
+      // Store file size from blob
+      depthMapFileSize.value = depthBlob.size;
 
       // Convert depth blob to data URL
       const depthDataUrl = await new Promise((resolve, reject) => {

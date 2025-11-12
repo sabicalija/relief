@@ -1,7 +1,15 @@
 <template>
   <div class="viewer-3d-panel">
     <div class="panel-nav">
-      <button class="nav-button" :class="{ active: activePanel === 'item' }" title="Item" @click="activePanel = 'item'">
+      <button
+        class="nav-button"
+        :class="{ active: activePanel === 'source' }"
+        title="Source"
+        @click="activePanel = 'source'"
+      >
+        <font-awesome-icon icon="image" />
+      </button>
+      <button class="nav-button" :class="{ active: activePanel === 'mesh' }" title="Mesh" @click="activePanel = 'mesh'">
         <font-awesome-icon icon="cube" />
       </button>
       <button
@@ -33,8 +41,11 @@
       </button>
     </div>
     <div class="panel-content">
-      <!-- Item panel - Transform properties -->
-      <ItemPanel v-if="activePanel === 'item'" :mesh="mesh" />
+      <!-- Source panel - Image metadata -->
+      <SourcePanel v-if="activePanel === 'source'" />
+
+      <!-- Mesh panel - Transform properties -->
+      <MeshPanel v-else-if="activePanel === 'mesh'" :mesh="mesh" />
 
       <!-- Dimensions panel - Mesh dimensions -->
       <DimensionsPanel v-else-if="activePanel === 'dimensions'" />
@@ -53,7 +64,8 @@
 
 <script setup>
 import { ref } from "vue";
-import ItemPanel from "./panels/ItemPanel.vue";
+import SourcePanel from "./panels/SourcePanel.vue";
+import MeshPanel from "./panels/MeshPanel.vue";
 import DimensionsPanel from "./panels/DimensionsPanel.vue";
 import MaterialPanel from "./panels/MaterialPanel.vue";
 import QualityPanel from "./panels/QualityPanel.vue";
@@ -67,7 +79,7 @@ const props = defineProps({
 });
 
 // Active panel state
-const activePanel = ref("item");
+const activePanel = ref("source");
 </script>
 
 <style scoped lang="scss">

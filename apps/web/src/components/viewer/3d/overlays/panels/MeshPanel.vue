@@ -1,5 +1,5 @@
 <template>
-  <div class="item-panel">
+  <div class="mesh-panel">
     <!-- Location Section -->
     <div class="section">
       <div class="section-header">Location</div>
@@ -216,7 +216,7 @@ function updateRotation(axis, event) {
 </script>
 
 <style scoped lang="scss">
-.item-panel {
+.mesh-panel {
   padding: 12px;
   display: flex;
   flex-direction: column;
