@@ -21,15 +21,25 @@
           <span class="property-value">{{ fileSize }}</span>
         </div>
       </div>
+
+      <!-- Upload new image button -->
+      <button class="upload-button" @click="triggerFileInput">
+        <font-awesome-icon icon="upload" />
+        <span>Load New Image</span>
+      </button>
+      <input type="file" class="file-input-hidden" accept="image/*" @change="handleFileUpload" ref="fileInputRef" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { useImageStore } from "@/stores/image";
+import { useViewerStore } from "@/stores/viewer";
 
 const imageStore = useImageStore();
+const viewerStore = useViewerStore();
+const fileInputRef = ref(null);
 
 // Computed properties for display
 const filename = computed(() => imageStore.depthMapFilename);
@@ -83,6 +93,33 @@ const fileSize = computed(() => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 });
+
+// Upload functionality
+function triggerFileInput() {
+  if (fileInputRef.value) {
+    fileInputRef.value.click();
+  }
+}
+
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Show loading status immediately before file reading starts
+  const statusId = viewerStore.showGenerating("Loading depth map...");
+
+  try {
+    await imageStore.loadDepthMapFromFile(file);
+  } finally {
+    // Remove loading status - mesh generation watcher will show its own status
+    viewerStore.removeStatus(statusId);
+  }
+
+  // Reset file input so the same file can be selected again
+  if (fileInputRef.value) {
+    fileInputRef.value.value = "";
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -136,5 +173,35 @@ const fileSize = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.upload-button {
+  width: 100%;
+  padding: 8px 16px;
+  margin-top: 8px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--color-primary-dark);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.file-input-hidden {
+  display: none;
 }
 </style>

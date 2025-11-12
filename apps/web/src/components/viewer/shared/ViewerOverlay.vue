@@ -22,22 +22,44 @@
 
     <!-- Download Button with Format Dropdown -->
     <div class="download-container">
-      <button class="download-btn" @click="handleDownload('stl')" :disabled="!mesh" title="Download STL" tabindex="3">
+      <button
+        class="download-btn"
+        @click="handleDownload(imageStore.viewMode === '2d' ? 'png' : 'stl')"
+        :disabled="!isDownloadAvailable"
+        :title="imageStore.viewMode === '2d' ? 'Download depth map' : 'Download STL'"
+        tabindex="3"
+      >
         <font-awesome-icon icon="download" />
         <span>Download</span>
       </button>
       <button
         class="download-dropdown-btn"
         @click="toggleFormatMenu"
-        :disabled="!mesh"
+        :disabled="!isDownloadAvailable"
         title="Choose format"
         tabindex="3"
       >
         <font-awesome-icon icon="angle-down" />
       </button>
 
-      <!-- Format Selection Menu -->
-      <div v-if="showFormatMenu" class="format-menu">
+      <!-- Format Selection Menu (2D view - image formats) -->
+      <div v-if="showFormatMenu && imageStore.viewMode === '2d'" class="format-menu">
+        <button @click="handleDownload('png')" class="format-option">
+          <span class="format-name">PNG</span>
+          <span class="format-desc">Lossless, transparency</span>
+        </button>
+        <button @click="handleDownload('jpg')" class="format-option">
+          <span class="format-name">JPG</span>
+          <span class="format-desc">Compressed, smaller size</span>
+        </button>
+        <button @click="handleDownload('webp')" class="format-option">
+          <span class="format-name">WebP</span>
+          <span class="format-desc">Modern, efficient</span>
+        </button>
+      </div>
+
+      <!-- Format Selection Menu (3D view - 3D formats) -->
+      <div v-if="showFormatMenu && imageStore.viewMode === '3d'" class="format-menu">
         <button @click="handleDownload('stl')" class="format-option">
           <span class="format-name">STL</span>
           <span class="format-desc">Binary, 3D printing</span>
@@ -84,6 +106,15 @@ const { mesh } = useMeshGeneration({
   statusStore: viewerStore,
 });
 
+// Check if download is available based on view mode
+const isDownloadAvailable = computed(() => {
+  if (imageStore.viewMode === "2d") {
+    return !!imageStore.depthMap; // Can download if depth map exists
+  } else {
+    return !!mesh.value; // Can download if mesh exists
+  }
+});
+
 // Format menu state
 const showFormatMenu = ref(false);
 
@@ -108,6 +139,67 @@ onUnmounted(() => {
 });
 
 async function handleDownload(format = "stl") {
+  // Close format menu
+  showFormatMenu.value = false;
+
+  // Handle image downloads (2D view)
+  if (["png", "jpg", "webp"].includes(format)) {
+    if (!imageStore.depthMap) return;
+
+    const statusId = viewerStore.addStatus(`Exporting ${format.toUpperCase()}...`, "spinner", {
+      spin: true,
+      priority: 10,
+    });
+
+    try {
+      // Generate filename
+      const baseFilename = imageStore.depthMapFilename
+        ? imageStore.depthMapFilename.replace(/\.[^/.]+$/, "")
+        : "relief-depthmap";
+      const filename = `${baseFilename}.${format}`;
+
+      // Create canvas and draw image
+      const img = new Image();
+      img.src = imageStore.depthMap;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      // Convert to blob and download
+      const mimeType = format === "jpg" ? "image/jpeg" : `image/${format}`;
+      const quality = format === "jpg" ? 0.95 : undefined;
+
+      canvas.toBlob(
+        (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          viewerStore.removeStatus(statusId);
+          viewerStore.showSuccess(`Downloaded ${filename}`, 2000);
+        },
+        mimeType,
+        quality
+      );
+    } catch (error) {
+      console.error("Error exporting image:", error);
+      viewerStore.removeStatus(statusId);
+      viewerStore.showError(`Export failed: ${error.message}`, 5000);
+    }
+    return;
+  }
+
+  // Handle 3D mesh downloads
   if (!mesh.value) return;
 
   // Close format menu
