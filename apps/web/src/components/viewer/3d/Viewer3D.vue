@@ -10,7 +10,10 @@
       />
 
       <!-- Scene environment -->
-      <SceneLighting />
+      <SceneLighting
+        :ambient-intensity="viewerStore.ambientLightIntensity"
+        :directional-intensity="viewerStore.directionalLightIntensity"
+      />
 
       <!-- Debug helpers -->
       <SceneHelpers :mesh="mesh" />

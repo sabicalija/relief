@@ -53,11 +53,15 @@ export const useViewerStore = defineStore("viewer", () => {
     gridSize: view.gridSize,
     gridDivisions: view.gridDivisions,
     backgroundColor: view.backgroundColor,
+    ambientLightIntensity: view.ambientLightIntensity,
+    directionalLightIntensity: view.directionalLightIntensity,
 
     // View actions
     setShowGrid: view.setShowGrid,
     setGridSize: view.setGridSize,
     setGridDivisions: view.setGridDivisions,
     setBackgroundColor: view.setBackgroundColor,
+    setAmbientLightIntensity: view.setAmbientLightIntensity,
+    setDirectionalLightIntensity: view.setDirectionalLightIntensity,
   };
 });

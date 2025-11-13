@@ -65,6 +65,49 @@
         </div>
       </div>
     </div>
+
+    <!-- Lighting Section -->
+    <div class="section">
+      <div class="section-header">
+        Lighting
+        <button class="reset-button" @click="resetLighting" title="Reset to defaults">
+          <font-awesome-icon icon="rotate-left" />
+        </button>
+      </div>
+      <div class="property-group">
+        <div class="property-row">
+          <label class="param-label">Ambient</label>
+          <span class="property-hint"></span>
+          <input
+            type="range"
+            class="slider-input"
+            :value="viewerStore.ambientLightIntensity"
+            :style="{ '--slider-percent': `${((viewerStore.ambientLightIntensity ?? 1.5) / 3) * 100}%` }"
+            @input="updateAmbientLight"
+            min="0"
+            max="3"
+            step="0.1"
+          />
+          <span class="slider-value">{{ (viewerStore.ambientLightIntensity ?? 1.5).toFixed(1) }}</span>
+        </div>
+
+        <div class="property-row">
+          <label class="param-label">Directional</label>
+          <span class="property-hint"></span>
+          <input
+            type="range"
+            class="slider-input"
+            :value="viewerStore.directionalLightIntensity"
+            :style="{ '--slider-percent': `${((viewerStore.directionalLightIntensity ?? 1.0) / 3) * 100}%` }"
+            @input="updateDirectionalLight"
+            min="0"
+            max="3"
+            step="0.1"
+          />
+          <span class="slider-value">{{ (viewerStore.directionalLightIntensity ?? 1.0).toFixed(1) }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -145,20 +188,45 @@ function updateBackgroundColorText(event) {
     viewerStore.setBackgroundColor(value);
   }
 }
+
+function updateAmbientLight(event) {
+  const value = parseFloat(event.target.value);
+  if (!isNaN(value)) {
+    viewerStore.setAmbientLightIntensity(value);
+  }
+}
+
+function updateDirectionalLight(event) {
+  const value = parseFloat(event.target.value);
+  if (!isNaN(value)) {
+    viewerStore.setDirectionalLightIntensity(value);
+  }
+}
+
+function resetLighting() {
+  viewerStore.setAmbientLightIntensity(1.5);
+  viewerStore.setDirectionalLightIntensity(1.0);
+}
 </script>
 
 <style scoped lang="scss">
 .view-panel {
-  padding: 12px;
+  padding: 12px 8px 12px 12px; // Reduced right padding to account for scrollbar
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box; // Ensure padding is included in width
 }
 
 .section {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0; // Allow flex children to shrink
+  max-width: 100%; // Prevent overflow
+  box-sizing: border-box;
 }
 
 .section-header {
@@ -167,12 +235,46 @@ function updateBackgroundColorText(event) {
   color: var(--text-primary, #333);
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reset-button {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  color: #666;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.25);
+    color: var(--text-primary, #333);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    font-size: 10px;
+  }
 }
 
 .property-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0; // Allow flex children to shrink
+  max-width: 100%; // Prevent overflow
+  box-sizing: border-box;
 }
 
 .checkbox-label {
@@ -194,6 +296,10 @@ function updateBackgroundColorText(event) {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0; // Allow flex children to shrink below content size
+  max-width: 100%; // Prevent overflow beyond parent container
+  box-sizing: border-box;
+  overflow: hidden; // Clip any overflow from children
 }
 
 .param-label {
@@ -272,5 +378,97 @@ function updateBackgroundColorText(event) {
 
 .info-row {
   padding: 6px 0;
+}
+
+.slider-input {
+  flex: 1;
+  min-width: 0; // Critical: allow range input to shrink in flex
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    rgba(0, 102, 204, 0.2) 0%,
+    rgba(0, 102, 204, 0.2) var(--slider-percent, 50%),
+    rgba(0, 0, 0, 0.1) var(--slider-percent, 50%),
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border: 2px solid #0066cc;
+    border-radius: 50%;
+    cursor: grab;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    &:active {
+      cursor: grabbing;
+      transform: scale(1.05);
+    }
+  }
+
+  &::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: white;
+    border: 2px solid #0066cc;
+    border-radius: 50%;
+    cursor: grab;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    &:active {
+      cursor: grabbing;
+      transform: scale(1.05);
+    }
+  }
+
+  &:focus {
+    &::-webkit-slider-thumb {
+      border-color: #0052a3;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+    }
+
+    &::-moz-range-thumb {
+      border-color: #0052a3;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+    }
+  }
+}
+
+.slider-value {
+  font-size: 12px;
+  color: var(--text-primary, #333);
+  font-family: monospace;
+  min-width: 28px;
+  text-align: right;
+  font-weight: 500;
+}
+
+.property-hint {
+  font-size: 10px;
+  color: var(--text-secondary, #aaa);
+  font-style: italic;
+  min-width: 20px;
+  text-align: right;
+  margin-right: 6px;
 }
 </style>

@@ -15,6 +15,10 @@ export function createViewerView() {
   // Scene background color
   const backgroundColor = ref("#f0f0f0");
 
+  // Lighting configuration
+  const ambientLightIntensity = ref(1.5);
+  const directionalLightIntensity = ref(1.0);
+
   // Actions
   function setShowGrid(value) {
     showGrid.value = value;
@@ -32,17 +36,29 @@ export function createViewerView() {
     backgroundColor.value = value;
   }
 
+  function setAmbientLightIntensity(value) {
+    ambientLightIntensity.value = value;
+  }
+
+  function setDirectionalLightIntensity(value) {
+    directionalLightIntensity.value = value;
+  }
+
   return {
     // State
     showGrid,
     gridSize,
     gridDivisions,
     backgroundColor,
+    ambientLightIntensity,
+    directionalLightIntensity,
 
     // Actions
     setShowGrid,
     setGridSize,
     setGridDivisions,
     setBackgroundColor,
+    setAmbientLightIntensity,
+    setDirectionalLightIntensity,
   };
 }
