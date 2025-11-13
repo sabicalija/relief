@@ -23,6 +23,19 @@
     <div class="section">
       <div class="section-header">Texture</div>
       <div class="property-group">
+        <!-- Show/Hide texture toggle (only when texture is available) -->
+        <div v-if="hasTexture" class="property-row checkbox-row">
+          <label class="checkbox-label">
+            <input
+              v-model="imageStore.showTexture"
+              type="checkbox"
+              class="checkbox-input"
+              @change="imageStore.setShowTexture($event.target.checked)"
+            />
+            <span class="checkbox-text">Show Texture</span>
+          </label>
+        </div>
+
         <!-- Texture preview (only show when texture is loaded) -->
         <div v-if="displayTexture" class="property-row">
           <label class="param-label">Preview</label>
@@ -69,6 +82,11 @@ const displayTexture = computed(() => {
 // Computed: Check if currently displaying a custom texture (not depth map)
 const isCustomTexture = computed(() => {
   return imageStore.textureMap !== null;
+});
+
+// Computed: Check if any texture is available (custom or depth map)
+const hasTexture = computed(() => {
+  return imageStore.textureMap !== null || imageStore.depthMap !== null;
 });
 
 // Debounced update function
@@ -228,6 +246,10 @@ watch(
   margin-top: 8px;
 }
 
+.checkbox-row {
+  margin-bottom: 8px;
+}
+
 .checkbox-label {
   font-size: 13px;
   color: var(--text-primary, #333);
@@ -235,21 +257,25 @@ watch(
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  user-select: none;
 
   input[type="checkbox"] {
     cursor: pointer;
     width: 16px;
     height: 16px;
+    accent-color: #42b983;
 
     &:disabled {
       cursor: not-allowed;
       opacity: 0.5;
     }
   }
+}
 
-  span {
-    user-select: none;
-  }
+.checkbox-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
 }
 
 .texture-preview-container {
