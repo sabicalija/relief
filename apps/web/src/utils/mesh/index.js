@@ -84,6 +84,8 @@ export async function createMeshFromDepthMap(imageDataUrl, config, statusStore =
   const finalDepth = applyContourFlattening(enhancedDepth, {
     enableContour: config.enableContour,
     contourThreshold: config.contourThreshold,
+    flattenAboveThreshold: config.flattenAboveThreshold,
+    flattenBelowThreshold: config.flattenBelowThreshold,
   });
 
   // Build 3D mesh geometry from processed depth map

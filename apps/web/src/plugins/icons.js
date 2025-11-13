@@ -30,6 +30,7 @@ import {
   faDownload,
   faSlidersH,
   faUpload,
+  faWandMagicSparkles,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
@@ -56,7 +57,8 @@ library.add(
   faTimes,
   faDownload,
   faSlidersH,
-  faUpload
+  faUpload,
+  faWandMagicSparkles
 );
 
 /**

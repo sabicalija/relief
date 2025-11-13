@@ -29,14 +29,16 @@ export function createImageState() {
 
   // Advanced depth enhancement options
   const enhanceDetails = ref(false); // Enable adaptive depth enhancement
-  const detailEnhancementStrength = ref(1.5); // How much to enhance fine details (1.0 = no enhancement)
+  const detailEnhancementStrength = ref(1.0); // Enhancement strength (0.0 = none, 1.0 = full equalization, >1.0 = over-enhancement)
   const detailThreshold = ref(0.1); // Threshold for what counts as "close" values (0.0-1.0)
   const preserveMajorFeatures = ref(true); // Keep large depth differences intact
   const smoothingKernelSize = ref(3); // Size of smoothing kernel for noise reduction
 
-  // Contour feature - flatten vertices above threshold
+  // Contour feature - flatten vertices above/below threshold
   const enableContour = ref(false); // Enable contour flattening
-  const contourThreshold = ref(0.8); // Z threshold (0-1) - vertices above this are flattened
+  const contourThreshold = ref(0.8); // Z threshold (0-1)
+  const flattenAboveThreshold = ref(true); // Flatten vertices above threshold to max (default)
+  const flattenBelowThreshold = ref(true); // Flatten vertices below threshold to 0 (default)
 
   return {
     // Image data
@@ -67,5 +69,7 @@ export function createImageState() {
     // Contour
     enableContour,
     contourThreshold,
+    flattenAboveThreshold,
+    flattenBelowThreshold,
   };
 }

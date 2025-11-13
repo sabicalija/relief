@@ -30,6 +30,8 @@ export function createGetters(state) {
       smoothingKernelSize: state.smoothingKernelSize.value,
       enableContour: state.enableContour.value,
       contourThreshold: state.contourThreshold.value,
+      flattenAboveThreshold: state.flattenAboveThreshold.value,
+      flattenBelowThreshold: state.flattenBelowThreshold.value,
     };
   });
 

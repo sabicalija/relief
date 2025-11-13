@@ -8,7 +8,7 @@
  * @param {Float32Array} depthMap - 2D depth map as 1D array
  * @param {number} width - Width of the depth map
  * @param {number} height - Height of the depth map
- * @param {number} strength - Enhancement strength (1.0 = full equalization)
+ * @param {number} strength - Enhancement strength (0.0 = no enhancement, 1.0 = full equalization, >1.0 = over-enhancement)
  * @returns {Float32Array} Enhanced depth map
  */
 export function adaptiveHistogramEqualization(depthMap, width, height, strength) {
@@ -120,19 +120,50 @@ export function gaussianSmooth(depthMap, width, height, kernelSize) {
  * @returns {Float32Array} Flattened depth map (or original if disabled)
  */
 export function applyContourFlattening(depthMap, contourConfig) {
-  const { enableContour = false, contourThreshold } = contourConfig;
+  const {
+    enableContour = false,
+    contourThreshold,
+    flattenAboveThreshold = true,
+    flattenBelowThreshold = false,
+  } = contourConfig;
 
   if (!enableContour || contourThreshold === undefined) {
     return depthMap;
   }
 
+  // At least one must be enabled
+  if (!flattenAboveThreshold && !flattenBelowThreshold) {
+    console.warn("⚠️ Neither flattenAboveThreshold nor flattenBelowThreshold enabled, using default (above)");
+    return applyContourFlattening(depthMap, {
+      ...contourConfig,
+      flattenAboveThreshold: true,
+      flattenBelowThreshold: false,
+    });
+  }
+
   const flattened = new Float32Array(depthMap.length);
 
   for (let i = 0; i < depthMap.length; i++) {
-    flattened[i] = depthMap[i] >= contourThreshold ? 1.0 : depthMap[i];
+    let value = depthMap[i];
+
+    // Apply flattening based on enabled modes
+    if (flattenAboveThreshold && value >= contourThreshold) {
+      value = 1.0; // Flatten to max
+    }
+    if (flattenBelowThreshold && value < contourThreshold) {
+      value = 0.0; // Flatten to min
+    }
+
+    flattened[i] = value;
   }
 
-  console.log(`🔪 Contour flattening applied at ${(contourThreshold * 100).toFixed(0)}% threshold`);
+  // Log the active modes
+  const modes = [];
+  if (flattenAboveThreshold) modes.push("above → max");
+  if (flattenBelowThreshold) modes.push("below → min");
+  const modeStr = modes.join(" + ");
+
+  console.log(`🔪 Contour flattening applied at ${(contourThreshold * 100).toFixed(0)}% threshold (${modeStr})`);
 
   return flattened;
 }
@@ -148,7 +179,7 @@ export function applyContourFlattening(depthMap, contourConfig) {
 export function enhanceDepthDetails(depthMap, width, height, enhanceConfig) {
   const {
     enhanceDetails = false,
-    detailEnhancementStrength = 1.5,
+    detailEnhancementStrength = 1.0,
     detailThreshold = 0.1,
     preserveMajorFeatures = true,
     smoothingKernelSize = 3,

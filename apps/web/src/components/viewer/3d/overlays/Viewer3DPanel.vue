@@ -22,6 +22,14 @@
       </button>
       <button
         class="nav-button"
+        :class="{ active: activePanel === 'processing' }"
+        title="Processing"
+        @click="activePanel = 'processing'"
+      >
+        <font-awesome-icon icon="wand-magic-sparkles" />
+      </button>
+      <button
+        class="nav-button"
         :class="{ active: activePanel === 'material' }"
         title="Material"
         @click="activePanel = 'material'"
@@ -50,6 +58,9 @@
       <!-- Dimensions panel - Mesh dimensions -->
       <DimensionsPanel v-else-if="activePanel === 'dimensions'" />
 
+      <!-- Processing panel - Depth enhancement and contour flattening -->
+      <ProcessingPanel v-else-if="activePanel === 'processing'" />
+
       <!-- Material panel - Color and texture -->
       <MaterialPanel v-else-if="activePanel === 'material'" />
 
@@ -67,6 +78,7 @@ import { ref } from "vue";
 import SourcePanel from "./panels/SourcePanel.vue";
 import MeshPanel from "./panels/MeshPanel.vue";
 import DimensionsPanel from "./panels/DimensionsPanel.vue";
+import ProcessingPanel from "./panels/ProcessingPanel.vue";
 import MaterialPanel from "./panels/MaterialPanel.vue";
 import QualityPanel from "./panels/QualityPanel.vue";
 import ViewPanel from "./panels/ViewPanel.vue";
