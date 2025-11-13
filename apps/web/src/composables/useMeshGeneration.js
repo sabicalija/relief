@@ -45,9 +45,18 @@ function disposeMesh(meshToDispose) {
  * @param {Object} options.statusStore - Viewer store for notifications (backward compatible parameter name)
  * @returns {Object} Mesh state and methods
  */
+// Track composable instances for debugging
+let instanceCounter = 0;
+
 export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerStore }) {
+  const instanceId = ++instanceCounter;
+  console.log(`🔧 useMeshGeneration instance #${instanceId} created`);
+
   const mesh = ref(null);
   const isGenerating = ref(false);
+
+  // Track if meshConfig watcher should skip first execution
+  let skipFirstMeshConfigWatch = true;
 
   /**
    * Generate mesh from depth map with status notifications
@@ -116,6 +125,7 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
   watch(
     depthMap,
     async (newDepthMap) => {
+      console.log(`📸 [Instance #${instanceId}] Depth map changed, generating mesh...`);
       await generateMesh(newDepthMap, meshConfig.value, true);
     },
     { immediate: true }
@@ -123,15 +133,28 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
 
   // Watch for parameter changes (regeneration without new depth map)
   // Exclude itemColor from triggering full regeneration
+  // Use deep: true to only trigger when actual values change
   watch(
     () => {
       const { itemColor, ...rest } = meshConfig.value;
       return rest;
     },
-    async (newConfig) => {
+    async (newConfig, oldConfig) => {
       if (!depthMap.value) return;
+
+      // Skip the very first execution (depthMap watcher handles initial generation)
+      if (skipFirstMeshConfigWatch) {
+        skipFirstMeshConfigWatch = false;
+        console.log(
+          `⏭️  [Instance #${instanceId}] Skipping first meshConfig watch (initial generation handled by depthMap watcher)`
+        );
+        return;
+      }
+
+      console.log(`⚙️  [Instance #${instanceId}] Mesh config changed, regenerating...`);
       await generateMesh(depthMap.value, { ...newConfig, itemColor: meshConfig.value.itemColor }, false);
-    }
+    },
+    { deep: true }
   );
 
   // Watch itemColor separately - just update material color

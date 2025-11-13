@@ -49,7 +49,7 @@
 
 <script setup>
 import { TresCanvas } from "@tresjs/core";
-import { watch, ref, computed, nextTick } from "vue";
+import { watch, ref, computed, nextTick, provide } from "vue";
 import { useImageStore } from "../../../stores/image";
 import { useViewerStore } from "../../../stores/viewer";
 import { useMeshGeneration } from "../../../composables/useMeshGeneration.js";
@@ -100,6 +100,9 @@ const { mesh } = useMeshGeneration({
   meshConfig: computed(() => imageStore.meshGenerationConfig),
   statusStore: viewerStore,
 });
+
+// Provide mesh to child components (ViewerOverlay needs it for downloads)
+provide("mesh", mesh);
 
 // Control mesh visibility based on view mode (instant switch)
 watch(

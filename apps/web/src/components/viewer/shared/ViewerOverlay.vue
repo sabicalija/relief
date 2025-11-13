@@ -86,10 +86,9 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, onMounted, onUnmounted, inject } from "vue";
 import { useImageStore } from "../../../stores/image";
 import { useViewerStore } from "../../../stores/viewer";
-import { useMeshGeneration } from "../../../composables/useMeshGeneration";
 import { exportToSTL, download as downloadSTL } from "../../../utils/mesh/stl";
 import { exportToOBJ, download as downloadOBJ } from "../../../utils/mesh/obj";
 import { exportToPLY, download as downloadPLY } from "../../../utils/mesh/ply";
@@ -99,12 +98,8 @@ import { exportToUSDZ, download as downloadUSDZ } from "../../../utils/mesh/usdz
 const imageStore = useImageStore();
 const viewerStore = useViewerStore();
 
-// Access the same mesh instance used by Viewer3D
-const { mesh } = useMeshGeneration({
-  depthMap: computed(() => imageStore.depthMap),
-  meshConfig: computed(() => imageStore.meshGenerationConfig),
-  statusStore: viewerStore,
-});
+// Get mesh from parent component (Viewer3D provides it)
+const mesh = inject("mesh", ref(null));
 
 // Check if download is available based on view mode
 const isDownloadAvailable = computed(() => {

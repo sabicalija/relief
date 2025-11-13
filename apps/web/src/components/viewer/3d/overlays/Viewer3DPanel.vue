@@ -3,22 +3,14 @@
     <div class="panel-nav">
       <button
         class="nav-button"
-        :class="{ active: activePanel === 'source' }"
-        title="Source"
-        @click="activePanel = 'source'"
+        :class="{ active: activePanel === 'input' }"
+        title="Input"
+        @click="activePanel = 'input'"
       >
         <font-awesome-icon icon="image" />
       </button>
       <button class="nav-button" :class="{ active: activePanel === 'mesh' }" title="Mesh" @click="activePanel = 'mesh'">
         <font-awesome-icon icon="cube" />
-      </button>
-      <button
-        class="nav-button"
-        :class="{ active: activePanel === 'dimensions' }"
-        title="Dimensions"
-        @click="activePanel = 'dimensions'"
-      >
-        <font-awesome-icon icon="ruler-combined" />
       </button>
       <button
         class="nav-button"
@@ -49,14 +41,11 @@
       </button>
     </div>
     <div class="panel-content">
-      <!-- Source panel - Image metadata -->
-      <SourcePanel v-if="activePanel === 'source'" />
+      <!-- Input panel - Image metadata -->
+      <InputPanel v-if="activePanel === 'input'" />
 
-      <!-- Mesh panel - Transform properties -->
+      <!-- Mesh panel - Transform and dimensions -->
       <MeshPanel v-else-if="activePanel === 'mesh'" :mesh="mesh" />
-
-      <!-- Dimensions panel - Mesh dimensions -->
-      <DimensionsPanel v-else-if="activePanel === 'dimensions'" />
 
       <!-- Processing panel - Depth enhancement and contour flattening -->
       <ProcessingPanel v-else-if="activePanel === 'processing'" />
@@ -75,9 +64,8 @@
 
 <script setup>
 import { ref } from "vue";
-import SourcePanel from "./panels/SourcePanel.vue";
+import InputPanel from "./panels/InputPanel.vue";
 import MeshPanel from "./panels/MeshPanel.vue";
-import DimensionsPanel from "./panels/DimensionsPanel.vue";
 import ProcessingPanel from "./panels/ProcessingPanel.vue";
 import MaterialPanel from "./panels/MaterialPanel.vue";
 import QualityPanel from "./panels/QualityPanel.vue";
@@ -91,7 +79,7 @@ const props = defineProps({
 });
 
 // Active panel state
-const activePanel = ref("source");
+const activePanel = ref("input");
 </script>
 
 <style scoped lang="scss">

@@ -1,8 +1,8 @@
 <template>
-  <div class="source-panel">
-    <!-- Source Image Section -->
+  <div class="input-panel">
+    <!-- Input Image Section -->
     <div class="section">
-      <div class="section-header">Source Image</div>
+      <div class="section-header">Input Image</div>
       <div class="property-group">
         <div class="property-row">
           <label class="param-label">Filename</label>
@@ -125,7 +125,7 @@ async function handleFileUpload(event) {
 <style scoped lang="scss">
 @use "@/styles/controls/buttons" as *;
 
-.source-panel {
+.input-panel {
   padding: 12px;
   display: flex;
   flex-direction: column;

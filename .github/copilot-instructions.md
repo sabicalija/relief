@@ -72,6 +72,16 @@ Rules:
 - Mesh is built in final orientation, no rotations applied
 - THREE.Object3D.DEFAULT_UP must be set to (0,0,1) in three-setup.js before any other imports
 
+**UI Labels vs Internal Coordinates:**
+For user-facing labels in dimension panels, we use intuitive descriptions rather than technical Blender axes:
+
+- Width → "X-axis (horizontal)"
+- Height → "Y-axis (vertical)" (even though internally it's Z-axis)
+- Depth → "Z-axis (depth)" (even though internally it's Y-axis)
+- Base → "Z-axis (below surface)"
+
+This matches standard user expectations where Y is vertical (like in 2D graphics) rather than Blender's Z-up convention.
+
 ### 2. Parameter Independence
 
 Physical dimensions are independent - no aspect ratio coupling:
