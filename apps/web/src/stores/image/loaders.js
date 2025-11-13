@@ -3,7 +3,16 @@
  * Handles loading depth maps from files, URLs, and data URLs
  */
 export function createLoaders(state) {
-  const { depthMap, textureMap, imageDimensions, depthMapFilename, depthMapFileSize, showTexture, viewMode } = state;
+  const {
+    depthMap,
+    textureMap,
+    imageDimensions,
+    depthMapFilename,
+    depthMapFileSize,
+    showTexture,
+    viewMode,
+    maxResolution,
+  } = state;
 
   /**
    * Load a depth map from a File object
@@ -34,6 +43,12 @@ export function createLoaders(state) {
             width: img.width,
             height: img.height,
           };
+
+          // Adjust maxResolution to not exceed source image max dimension
+          const sourceMaxDim = Math.max(img.width, img.height);
+          if (maxResolution.value > sourceMaxDim) {
+            maxResolution.value = sourceMaxDim;
+          }
 
           // Set depth map and related state
           depthMap.value = imageData;
@@ -73,6 +88,12 @@ export function createLoaders(state) {
         width: img.width,
         height: img.height,
       };
+
+      // Adjust maxResolution to not exceed source image max dimension
+      const sourceMaxDim = Math.max(img.width, img.height);
+      if (maxResolution.value > sourceMaxDim) {
+        maxResolution.value = sourceMaxDim;
+      }
     };
     img.src = imageData;
 

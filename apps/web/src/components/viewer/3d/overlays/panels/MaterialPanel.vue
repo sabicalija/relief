@@ -23,23 +23,7 @@
     <div class="section">
       <div class="section-header">Texture</div>
       <div class="property-group">
-        <!-- File input (only show when no texture loaded) -->
-        <div v-if="!displayTexture" class="property-row">
-          <label class="param-label">Custom</label>
-          <button class="upload-button" @click="triggerFileInput">
-            <font-awesome-icon icon="image" />
-            <span>Choose File</span>
-          </button>
-          <input
-            type="file"
-            class="file-input-hidden"
-            accept="image/*"
-            @change="handleTextureUpload"
-            ref="fileInputRef"
-          />
-        </div>
-
-        <!-- Texture preview -->
+        <!-- Texture preview (only show when texture is loaded) -->
         <div v-if="displayTexture" class="property-row">
           <label class="param-label">Preview</label>
           <div class="texture-preview-container">
@@ -49,6 +33,19 @@
             </button>
           </div>
         </div>
+
+        <!-- Upload button (always visible) -->
+        <button class="upload-button" @click="triggerFileInput">
+          <font-awesome-icon icon="image" />
+          <span>Load Texture</span>
+        </button>
+        <input
+          type="file"
+          class="file-input-hidden"
+          accept="image/*"
+          @change="handleTextureUpload"
+          ref="fileInputRef"
+        />
       </div>
     </div>
   </div>
@@ -139,6 +136,8 @@ watch(
 </script>
 
 <style scoped lang="scss">
+@use "@/styles/controls/buttons" as *;
+
 .material-panel {
   padding: 12px;
   display: flex;
@@ -221,33 +220,12 @@ watch(
 }
 
 .upload-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  font-size: 13px;
-  color: var(--text-primary, #333);
-  font-family: "Segoe UI", system-ui, sans-serif;
-  cursor: pointer;
-  transition: all 0.2s;
+  @include btn-panel-action;
+  width: 100%;
+}
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.3);
-  }
-
-  &:focus {
-    outline: none;
-    border-color: #0066cc;
-    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
-  }
-
-  svg {
-    font-size: 14px;
-  }
+.property-row + .upload-button {
+  margin-top: 8px;
 }
 
 .checkbox-label {

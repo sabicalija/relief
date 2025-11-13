@@ -123,6 +123,8 @@ async function handleFileUpload(event) {
 </script>
 
 <style scoped lang="scss">
+@use "@/styles/controls/buttons" as *;
+
 .source-panel {
   padding: 12px;
   display: flex;
@@ -176,29 +178,9 @@ async function handleFileUpload(event) {
 }
 
 .upload-button {
+  @include btn-panel-action;
   width: 100%;
-  padding: 8px 16px;
   margin-top: 8px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--color-primary-dark);
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
 }
 
 .file-input-hidden {

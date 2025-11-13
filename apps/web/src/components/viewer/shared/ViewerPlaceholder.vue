@@ -38,7 +38,9 @@ const handleFileUpload = async (event) => {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use "@/styles/controls/buttons" as *;
+
 .viewer-placeholder {
   width: 100%;
   height: 100vh;
@@ -71,23 +73,8 @@ const handleFileUpload = async (event) => {
 }
 
 .upload-button {
+  @include btn-panel-action-large;
   margin-top: 2rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: var(--color-primary-dark);
-  }
 }
 
 .file-input {

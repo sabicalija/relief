@@ -245,6 +245,8 @@ const isMeshTooLarge = computed(() => {
 </script>
 
 <style scoped lang="scss">
+@use "@/styles/controls/buttons" as *;
+
 .quality-panel {
   display: flex;
   flex-direction: column;
@@ -390,26 +392,7 @@ const isMeshTooLarge = computed(() => {
 }
 
 .preset-btn {
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 500;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  background: transparent;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  color: #666;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.25);
-  }
-
-  &.active {
-    background: var(--color-primary, #42b983);
-    border-color: var(--color-primary, #42b983);
-    color: white;
-  }
+  @include btn-panel-preset;
 }
 
 .hint {
