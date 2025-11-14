@@ -7,6 +7,7 @@ import { createMeshSetters } from "./image/mesh.js";
 import { createEnhancementSetters } from "./image/enhancements.js";
 import { createContourSetters } from "./image/contour.js";
 import { createDisplaySetters } from "./image/display.js";
+import { createDepthGenerator } from "./image/depth.js";
 
 /**
  * Image store - manages depth maps, textures, and mesh configuration
@@ -26,6 +27,7 @@ export const useImageStore = defineStore("image", () => {
   const enhancements = createEnhancementSetters(state);
   const contour = createContourSetters(state);
   const display = createDisplaySetters(state);
+  const depthGenerator = createDepthGenerator(state);
 
   // Return flattened API (backward compatible with existing components)
   return {
@@ -40,5 +42,6 @@ export const useImageStore = defineStore("image", () => {
     ...enhancements,
     ...contour,
     ...display,
+    ...depthGenerator,
   };
 });

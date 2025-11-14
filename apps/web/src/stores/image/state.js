@@ -13,6 +13,12 @@ export function createImageState() {
   const depthMapFileSize = ref(null); // File size in bytes
   const viewMode = ref("3d"); // "2d" for depth map, "3d" for STL viewer
 
+  // Depth generation config
+  const depthModelVariant = ref(null); // Selected model variant (e.g., "q8", "fp16", "fp32")
+  const depthExecutionBackend = ref(null); // Selected execution backend (e.g., "wasm", "webgpu")
+  // Legacy: kept for backward compatibility during migration
+  const depthModelConfig = ref(null); // Selected model config key (e.g., "q8_wasm", "fp16_webgpu")
+
   // Relief config parameters - all in mm for consistency
   const targetDepthMm = ref(20.0);
   const baseThicknessMm = ref(10.0);
@@ -60,6 +66,10 @@ export function createImageState() {
     showTexture,
     showGrid,
     itemColor,
+    // Depth generation
+    depthModelVariant,
+    depthExecutionBackend,
+    depthModelConfig, // Legacy
     // Enhancements
     enhanceDetails,
     detailEnhancementStrength,
