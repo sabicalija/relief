@@ -2,8 +2,10 @@
  * Mesh Generation Composable
  * Manages 3D mesh lifecycle: generation, disposal, and reactive updates
  */
-import { ref, watch, markRaw } from "vue";
-import { createMeshFromDepthMap } from "../utils/mesh/index.js";
+import { ref, watch, markRaw, onUnmounted } from "vue";
+import * as THREE from "three";
+import { createMeshMaterials } from "../utils/mesh/material.js";
+import MeshWorker from "../workers/mesh-generation.worker.js?worker";
 
 /**
  * Dispose a Three.js mesh and all its resources (geometry, materials, textures)
@@ -55,11 +57,15 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
   const mesh = ref(null);
   const isGenerating = ref(false);
 
+  // Create worker instance
+  const worker = new MeshWorker();
+  let currentGenerationId = 0;
+
   // Track if meshConfig watcher should skip first execution
   let skipFirstMeshConfigWatch = true;
 
   /**
-   * Generate mesh from depth map with status notifications
+   * Generate mesh from depth map with status notifications (using Web Worker)
    * @param {string} depthMapData - Depth map data URL
    * @param {Object} config - Mesh configuration
    * @param {boolean} showStatusMessages - Whether to show status notifications
@@ -71,31 +77,114 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
     }
 
     isGenerating.value = true;
+    const generationId = ++currentGenerationId;
     let statusId = null;
+    let simplificationStatusId = null;
 
     if (showStatusMessages) {
       statusId = viewerStore.showGenerating("Generating 3D mesh...");
-      console.log("🔄 Generating mesh from depth map...");
+      console.log("🔄 Generating mesh from depth map (in Web Worker)...");
     } else {
-      console.log("🔄 Regenerating mesh due to parameter change...");
+      console.log("🔄 Regenerating mesh due to parameter change (in Web Worker)...");
     }
 
     try {
-      let newMesh;
+      // Send generation request to worker
+      const meshData = await new Promise((resolve, reject) => {
+        const handleMessage = (event) => {
+          const { type, data, error } = event.data;
 
-      // Check if simplification will be applied (needs status indicator)
-      const willSimplify = config.geometrySimplification < 0.99;
+          if (type === "simplification-start") {
+            // Show simplification status
+            if (simplificationStatusId) {
+              viewerStore.removeStatus(simplificationStatusId);
+            }
+            simplificationStatusId = viewerStore.addStatus(
+              `Simplifying geometry (${data.originalVertices.toLocaleString()} vertices → ${Math.round(
+                data.originalVertices * data.targetRatio
+              ).toLocaleString()} target)...`,
+              "spinner",
+              { priority: 9 }
+            );
+          } else if (type === "simplification-complete") {
+            // Update simplification status
+            if (simplificationStatusId) {
+              viewerStore.removeStatus(simplificationStatusId);
+              simplificationStatusId = null;
+            }
+          } else if (type === "success") {
+            worker.removeEventListener("message", handleMessage);
+            resolve(data);
+          } else if (type === "error") {
+            worker.removeEventListener("message", handleMessage);
+            reject(new Error(error.message));
+          }
+        };
 
-      if (showStatusMessages) {
-        // Ensure minimum display time for status message (initial generation)
-        [newMesh] = await Promise.all([
-          createMeshFromDepthMap(depthMapData, config, willSimplify ? viewerStore : null),
-          new Promise((resolve) => setTimeout(resolve, 300)), // Minimum 300ms display
-        ]);
-      } else {
-        // No minimum delay for parameter changes, but still show status for simplification
-        newMesh = await createMeshFromDepthMap(depthMapData, config, willSimplify ? viewerStore : null);
+        worker.addEventListener("message", handleMessage);
+        worker.postMessage({
+          type: "generate",
+          data: {
+            imageDataUrl: depthMapData,
+            config: config,
+          },
+        });
+      });
+
+      // Check if this generation is still current (user might have triggered another)
+      if (generationId !== currentGenerationId) {
+        console.log(`⏭️  Generation ${generationId} cancelled (newer generation in progress)`);
+        return;
       }
+
+      // Minimum display time for initial generation
+      if (showStatusMessages) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
+      // Deserialize geometry from worker data
+      // Manually reconstruct BufferGeometry from JSON data
+      const geometry = new THREE.BufferGeometry();
+      const geoData = meshData.geometryData.data;
+
+      if (!geoData) {
+        throw new Error("Invalid geometry data received from worker");
+      }
+
+      // Set attributes (position, normal, uv, etc.)
+      if (geoData.attributes) {
+        for (const [name, attrData] of Object.entries(geoData.attributes)) {
+          const array = new Float32Array(attrData.array);
+          geometry.setAttribute(name, new THREE.BufferAttribute(array, attrData.itemSize));
+        }
+      }
+
+      // Set index if present
+      if (geoData.index) {
+        const indexArray = new Uint32Array(geoData.index.array);
+        geometry.setIndex(new THREE.BufferAttribute(indexArray, 1));
+      }
+
+      // Set groups if present (for multi-material meshes)
+      if (geoData.groups) {
+        for (const group of geoData.groups) {
+          geometry.addGroup(group.start, group.count, group.materialIndex);
+        }
+      } // Create materials on main thread (requires DOM for texture loading)
+      const materials = createMeshMaterials({
+        showTexture: meshData.metadata.showTexture,
+        textureMap: meshData.metadata.textureMap,
+        imageDataUrl: meshData.metadata.imageDataUrl,
+        itemColor: meshData.metadata.itemColor,
+      });
+
+      // Create the mesh
+      const newMesh = new THREE.Mesh(geometry, materials);
+
+      // Store metadata
+      newMesh.userData.resolution = meshData.metadata.resolution;
+      newMesh.userData.simplified = meshData.metadata.wasSimplified;
+      newMesh.userData.hasTexture = meshData.metadata.showTexture;
 
       // Dispose old mesh completely
       disposeMesh(mesh.value);
@@ -104,20 +193,25 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
       mesh.value = markRaw(newMesh);
 
       if (showStatusMessages) {
-        console.log("✅ Mesh generated successfully");
+        console.log("✅ Mesh generated successfully (via Web Worker)");
         viewerStore.removeStatus(statusId);
         viewerStore.showSuccess("Mesh generated successfully", 2000);
       } else {
-        console.log("✅ Mesh regenerated successfully");
+        console.log("✅ Mesh regenerated successfully (via Web Worker)");
       }
     } catch (error) {
-      console.error("❌ Error generating mesh:", error);
-      if (showStatusMessages) {
+      console.error("❌ Error generating mesh in worker:", error);
+      if (showStatusMessages && statusId) {
         viewerStore.removeStatus(statusId);
         viewerStore.showError(`Error generating mesh: ${error.message}`, 5000);
       }
+      if (simplificationStatusId) {
+        viewerStore.removeStatus(simplificationStatusId);
+      }
     } finally {
       isGenerating.value = false;
+      if (statusId) viewerStore.removeStatus(statusId);
+      if (simplificationStatusId) viewerStore.removeStatus(simplificationStatusId);
     }
   }
 
@@ -178,6 +272,13 @@ export function useMeshGeneration({ depthMap, meshConfig, statusStore: viewerSto
       }
     }
   );
+
+  // Cleanup worker on unmount
+  onUnmounted(() => {
+    console.log(`🔧 useMeshGeneration instance #${instanceId} destroyed, terminating worker`);
+    worker.terminate();
+    disposeMesh(mesh.value);
+  });
 
   return {
     mesh,
