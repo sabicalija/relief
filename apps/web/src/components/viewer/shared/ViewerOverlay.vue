@@ -104,9 +104,13 @@ const mesh = inject("mesh", ref(null));
 // Check if download is available based on view mode
 const isDownloadAvailable = computed(() => {
   if (imageStore.viewMode === "2d") {
-    return !!imageStore.depthMap; // Can download if depth map exists
+    const available = !!imageStore.depthMap;
+    console.log("[Download] 2D mode - depth map available:", available);
+    return available;
   } else {
-    return !!mesh.value; // Can download if mesh exists
+    const available = !!mesh.value;
+    console.log("[Download] 3D mode - mesh available:", available, mesh.value);
+    return available;
   }
 });
 

@@ -44,15 +44,12 @@
       v-model:transform-mode="transformMode"
       v-model:projection-mode="projectionMode"
     />
-
-    <!-- Status indicator (bottom-left) -->
-    <Viewer3DStatusIndicator />
   </div>
 </template>
 
 <script setup>
 import { TresCanvas } from "@tresjs/core";
-import { watch, ref, computed, nextTick, provide } from "vue";
+import { watch, ref, computed, nextTick } from "vue";
 import { useImageStore } from "../../../stores/image";
 import { useViewerStore } from "../../../stores/viewer";
 import { useMeshGeneration } from "../../../composables/useMeshGeneration.js";
@@ -64,7 +61,6 @@ import MeshEditor from "./scene/MeshEditor.vue";
 import ViewportHelpers from "./scene/ViewportHelpers.vue";
 import ContextSync from "../shared/ContextSync.vue";
 import Viewer3DOverlay from "./overlays/Viewer3DOverlay.vue";
-import Viewer3DStatusIndicator from "./overlays/Viewer3DStatusIndicator.vue";
 
 const imageStore = useImageStore();
 const viewerStore = useViewerStore();
@@ -104,8 +100,15 @@ const { mesh } = useMeshGeneration({
   statusStore: viewerStore,
 });
 
-// Provide mesh to child components (ViewerOverlay needs it for downloads)
-provide("mesh", mesh);
+// Emit mesh to parent so it can provide it to siblings
+const emit = defineEmits(["mesh-generated"]);
+watch(
+  mesh,
+  (newMesh) => {
+    emit("mesh-generated", newMesh);
+  },
+  { immediate: true }
+);
 
 // Control mesh visibility based on view mode (instant switch)
 watch(
