@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import {
   faSpinner,
   faImage,
+  faFileImage,
   faArrowsUpDownLeftRight,
   faRotate,
   faRotateLeft,
@@ -32,12 +33,14 @@ import {
   faSlidersH,
   faUpload,
   faWandMagicSparkles,
+  faCircleNotch,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to library
 library.add(
   faSpinner,
   faImage,
+  faFileImage,
   faArrowsUpDownLeftRight,
   faRotate,
   faRotateLeft,
@@ -60,7 +63,8 @@ library.add(
   faDownload,
   faSlidersH,
   faUpload,
-  faWandMagicSparkles
+  faWandMagicSparkles,
+  faCircleNotch
 );
 
 /**
