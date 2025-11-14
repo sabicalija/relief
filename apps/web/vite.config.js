@@ -35,6 +35,15 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["vue", "three", "@huggingface/transformers"],
   },
+  worker: {
+    format: "es",
+  },
+  server: {
+    headers: {
+      "Cross-Origin-Embedder-Policy": "credentialless",
+      "Cross-Origin-Opener-Policy": "same-origin",
+    },
+  },
   test: {
     globals: true,
     environment: "happy-dom",

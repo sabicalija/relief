@@ -3,6 +3,10 @@
  * Handles compute-intensive mesh generation off the main thread
  */
 import * as THREE from "three";
+
+// Set Z-up coordinate system for Blender compatibility (worker context)
+THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+
 import {
   adaptiveHistogramEqualization,
   gaussianSmooth,

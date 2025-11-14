@@ -10,18 +10,15 @@ env.allowRemoteModels = true;
 
 // Configure ONNX Runtime to use Web Workers (runs off main thread)
 // Automatically falls back to main thread if workers not supported
-env.backends.onnx.wasm.proxy = typeof Worker !== "undefined"; // Enable worker-based execution if available
+env.backends.onnx.wasm.proxy = false; // Disable proxy workers due to GitHub Pages CORS limitations
 
-// Point to JSEP WASM files for WebGPU support
-// These files enable GPU acceleration via WebGPU
-env.backends.onnx.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
+// Use default WASM paths (Transformers.js will handle loading from CDN)
+// GitHub Pages doesn't support custom headers needed for SharedArrayBuffer
+// env.backends.onnx.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
 
 // Log worker availability
-if (env.backends.onnx.wasm.proxy) {
-  console.log("[Depth] Web Workers enabled - inference will run off main thread");
-} else {
-  console.warn("[Depth] Web Workers not available - inference will run on main thread (UI may freeze)");
-}
+console.log("[Depth] Running in single-threaded mode (GitHub Pages limitation)");
+console.log("[Depth] For better performance, deploy with proper CORS headers");
 
 // Cache for multiple pipeline instances (one per config)
 const pipelineCache = new Map(); // key: "variant_backend", value: pipeline instance
