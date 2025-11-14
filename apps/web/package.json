@@ -9,12 +9,14 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "download:models": "node scripts/download-depth-model.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/vue-fontawesome": "^3.1.2",
+    "@huggingface/transformers": "^3.7.6",
     "@tresjs/cientos": "^5.1.0",
     "@tresjs/core": "^5.1.0",
     "@vueuse/core": "^14.0.0",
