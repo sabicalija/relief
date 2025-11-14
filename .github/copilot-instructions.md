@@ -7,16 +7,18 @@ Relief converts depth maps and images into 3D relief models (STL files) for tact
 - Vue 3 + Vite + Pinia
 - TresJS (@tresjs/core, @tresjs/cientos) for declarative Three.js
 - Three.js (BufferGeometry, STLExporter)
+- Transformers.js (@huggingface/transformers) for browser-based ML inference
+- Depth Anything V2 Small model for depth map generation (~25MB)
 - SCSS with modern @use syntax
 - Vitest for testing
 - pnpm workspaces
-- Python Flask API (apps/api/)
+- Python Flask API (apps/api/) - legacy MiDaS depth service
 
 ## Repository Structure
 
 ```
 apps/
-  api/              # Flask depth service
+  api/              # Flask depth service (legacy)
   web/              # Vue 3 frontend
     src/
       components/
@@ -27,6 +29,7 @@ apps/
       utils/
         image/      # Image processing (depthmap, resampling)
         mesh/       # 3D mesh operations (geometry, STL export)
+        depth/      # AI depth estimation (Transformers.js, Depth Anything V2)
 ```
 
 ## Build & Test
@@ -102,6 +105,7 @@ Separate image processing from 3D mesh operations:
 
 - `utils/image/` - Image processing (depthmap.js, processing.js, index.js)
 - `utils/mesh/` - 3D operations (geometry.js, material.js, stl.js, index.js)
+- `utils/depth/` - AI depth estimation (estimation.js using Transformers.js)
 
 Import flow: Components import from `mesh/index.js`, which imports from `image/index.js`. This maintains clean boundaries.
 
@@ -120,6 +124,7 @@ Pinia store with sub-modules in `stores/image/`:
 - enhancements.js - Depth enhancement (setEnhanceDetails, strength, threshold, smoothing)
 - contour.js - Contour flattening (setEnableContour, setContourThreshold)
 - display.js - Display settings (setShowTexture, setBaseColor, texture management)
+- depth.js - AI depth generation (generateDepthMapFromImage using Transformers.js)
 
 Main store (`stores/image.js`) composes modules with spread operator for backward-compatible flat API.
 

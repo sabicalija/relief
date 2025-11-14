@@ -8,6 +8,7 @@ Convert depth maps and images into 3D relief models (STL files) for tactile grap
 ## Features
 
 - 📸 **Load depth maps** from files or demo gallery
+- 🤖 **AI-powered depth generation** - Convert regular images to depth maps using Depth Anything V2 (~25MB model, runs in browser)
 - 🎨 **Real-time 3D preview** with texture mapping
 - 📏 **Precise control** over physical dimensions (width, height, depth)
 - ✨ **Depth enhancement** with adaptive histogram equalization
@@ -74,6 +75,7 @@ relief/
 
 - **Frontend**: Vue 3, Vite, Pinia
 - **3D Rendering**: TresJS (declarative Three.js), Three.js
+- **AI/ML**: Transformers.js (Depth Anything V2 Small for depth estimation)
 - **Styling**: SCSS
 - **Testing**: Vitest
 - **Package Manager**: pnpm workspaces
@@ -91,9 +93,11 @@ See [.github/copilot-instructions.md](.github/copilot-instructions.md) for:
 - Build and test commands
 - Critical architecture rules
 
-## API (Optional Depth Service)
+## API (Optional Legacy Depth Service)
 
-The Python Flask API can generate depth maps from regular images:
+The web app now includes built-in AI-powered depth generation using [Depth Anything V2](https://github.com/DepthAnything/Depth-Anything-V2) running directly in the browser via [Transformers.js](https://huggingface.co/docs/transformers.js).
+
+The Python Flask API is still available as an alternative depth service using MiDaS:
 
 ```bash
 docker build -t relief-depth-api ./apps/api
