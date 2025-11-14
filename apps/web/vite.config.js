@@ -33,7 +33,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["vue", "three"],
+    exclude: ["vue", "three", "@huggingface/transformers"],
   },
   test: {
     globals: true,
